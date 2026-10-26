@@ -1,0 +1,162 @@
+[
+  {
+    "id": "KTP-R01",
+    "serviceId": "ktp",
+    "priority": 95,
+    "aktif": true,
+    "deskripsi": "Pemohon di bawah 17 tahun dan belum pernah menikah sehingga belum wajib memiliki KTP-el.",
+    "when": [
+      { "fact": "kategori_usia", "op": "equals", "value": "di_bawah_17" },
+      { "fact": "status_perkawinan", "op": "equals", "value": "belum_menikah" }
+    ],
+    "then": {
+      "setOutcome": "tidak_dapat_diproses",
+      "terminal": true,
+      "addRequirements": [],
+      "addNotes": [
+        "Anak di bawah 17 tahun yang belum pernah menikah belum wajib memiliki KTP-el. Identitas dapat menggunakan KIA."
+      ]
+    }
+  },
+  {
+    "id": "KTP-R02",
+    "serviceId": "ktp",
+    "priority": 90,
+    "aktif": true,
+    "deskripsi": "Pemohon di bawah 17 tahun tetapi sudah/pernah menikah, sehingga KTP-el dapat diajukan dengan catatan.",
+    "when": [
+      { "fact": "kategori_usia", "op": "equals", "value": "di_bawah_17" },
+      { "fact": "status_perkawinan", "op": "equals", "value": "menikah" }
+    ],
+    "then": {
+      "setOutcome": "dengan_catatan",
+      "terminal": false,
+      "addRequirements": ["REQ_KK_ASLI", "REQ_AKTA_NIKAH", "REQ_AKTA_KELAHIRAN", "REQ_PENGANTAR_RTRW", "REQ_F101"],
+      "addNotes": ["Pengajuan didampingi orang tua/wali."]
+    }
+  },
+  {
+    "id": "KTP-R03",
+    "serviceId": "ktp",
+    "priority": 70,
+    "aktif": true,
+    "deskripsi": "Pemohon 17 tahun atau lebih dan belum pernah memiliki KTP, sehingga termasuk pengajuan KTP baru.",
+    "when": [
+      { "fact": "kategori_usia", "op": "equals", "value": "17_ke_atas" },
+      { "fact": "sudah_punya_ktp", "op": "equals", "value": "tidak" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_KK_ASLI", "REQ_AKTA_KELAHIRAN", "REQ_PENGANTAR_RTRW", "REQ_F101"],
+      "addFacts": { "jenis_pengajuan_ktp": "baru" },
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KTP-R04",
+    "serviceId": "ktp",
+    "priority": 75,
+    "aktif": true,
+    "deskripsi": "Penggantian KTP-el karena hilang.",
+    "when": [
+      { "fact": "sudah_punya_ktp", "op": "equals", "value": "ya" },
+      { "fact": "alasan_pengajuan_ktp", "op": "equals", "value": "hilang" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_SURAT_KEHILANGAN", "REQ_KK_FOTO", "REQ_F101"],
+      "addFacts": { "jenis_pengajuan_ktp": "penggantian_hilang" },
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KTP-R05",
+    "serviceId": "ktp",
+    "priority": 75,
+    "aktif": true,
+    "deskripsi": "Penggantian KTP-el karena rusak.",
+    "when": [
+      { "fact": "sudah_punya_ktp", "op": "equals", "value": "ya" },
+      { "fact": "alasan_pengajuan_ktp", "op": "equals", "value": "rusak" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_KTP_EL_LAMA", "REQ_KK_FOTO", "REQ_F101"],
+      "addFacts": { "jenis_pengajuan_ktp": "penggantian_rusak" },
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KTP-R06",
+    "serviceId": "ktp",
+    "priority": 75,
+    "aktif": true,
+    "deskripsi": "Pengajuan KTP-el karena pindah datang dari luar Kota Semarang.",
+    "when": [
+      { "fact": "sudah_punya_ktp", "op": "equals", "value": "ya" },
+      { "fact": "alasan_pengajuan_ktp", "op": "equals", "value": "pindah_datang" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_SKPWNI", "REQ_KK_BARU", "REQ_KTP_EL_LAMA", "REQ_F101"],
+      "addFacts": { "jenis_pengajuan_ktp": "pindah_datang" },
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KTP-R07",
+    "serviceId": "ktp",
+    "priority": 75,
+    "aktif": true,
+    "deskripsi": "Penggantian KTP-el karena perubahan data kependudukan.",
+    "when": [
+      { "fact": "sudah_punya_ktp", "op": "equals", "value": "ya" },
+      { "fact": "alasan_pengajuan_ktp", "op": "equals", "value": "perubahan_data" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_KTP_EL_LAMA", "REQ_KK_FOTO", "REQ_DOK_PENDUKUNG", "REQ_F101"],
+      "addFacts": { "jenis_pengajuan_ktp": "perubahan_data" },
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KTP-R08",
+    "serviceId": "ktp",
+    "priority": 99,
+    "aktif": true,
+    "deskripsi": "Pemohon berdomisili di luar Kelurahan Tegalsari sehingga pengurusan harus di kelurahan domisili.",
+    "when": [
+      { "fact": "domisili_pemohon", "op": "equals", "value": "luar_tegalsari" }
+    ],
+    "then": {
+      "setOutcome": "tidak_dapat_diproses",
+      "terminal": true,
+      "addRequirements": [],
+      "addNotes": ["Pengurusan KTP dilakukan di kelurahan tempat domisili pemohon."]
+    }
+  },
+  {
+    "id": "KTP-R10",
+    "serviceId": "ktp",
+    "priority": 88,
+    "aktif": true,
+    "deskripsi": "Pemohon berusia di bawah 17 tahun dengan status pernah menikah. Ketentuan administrasi untuk jalur ini belum divalidasi petugas.",
+    "when": [
+      { "fact": "kategori_usia", "op": "equals", "value": "di_bawah_17" },
+      { "fact": "status_perkawinan", "op": "equals", "value": "pernah_menikah" }
+    ],
+    "then": {
+      "terminal": false,
+      "addRequirements": [],
+      "addNotes": [
+        "Kasus Anda belum tercakup dalam panduan ini. Silakan konfirmasi langsung ke loket pelayanan Kelurahan Tegalsari."
+      ]
+    }
+  }
+]

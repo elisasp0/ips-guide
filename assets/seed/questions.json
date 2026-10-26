@@ -1,0 +1,150 @@
+[
+  {
+    "id": "KTP-Q01",
+    "serviceId": "ktp",
+    "factKey": "kategori_usia",
+    "teks": "Berapa usia Anda saat ini?",
+    "urutan": 10,
+    "aktif": true,
+    "opsi": [
+      { "value": "di_bawah_17", "label": "Di bawah 17 tahun" },
+      { "value": "17_ke_atas", "label": "17 tahun ke atas" }
+    ]
+  },
+  {
+    "id": "KTP-Q02",
+    "serviceId": "ktp",
+    "factKey": "status_perkawinan",
+    "teks": "Apa status perkawinan Anda?",
+    "urutan": 20,
+    "aktif": true,
+    "showIf": { "fact": "kategori_usia", "op": "equals", "value": "di_bawah_17" },
+    "opsi": [
+      { "value": "belum_menikah", "label": "Belum pernah menikah" },
+      { "value": "menikah", "label": "Sedang menikah" },
+      { "value": "pernah_menikah", "label": "Pernah menikah" }
+    ]
+  },
+  {
+    "id": "KTP-Q03",
+    "serviceId": "ktp",
+    "factKey": "sudah_punya_ktp",
+    "teks": "Apakah Anda sudah memiliki KTP?",
+    "urutan": 30,
+    "aktif": true,
+    "showIf": { "fact": "kategori_usia", "op": "equals", "value": "17_ke_atas" },
+    "opsi": [
+      { "value": "ya", "label": "Ya" },
+      { "value": "tidak", "label": "Tidak" }
+    ]
+  },
+  {
+    "id": "KTP-Q04",
+    "serviceId": "ktp",
+    "factKey": "domisili_pemohon",
+    "teks": "Di mana domisili Anda?",
+    "urutan": 40,
+    "aktif": true,
+    "opsi": [
+      { "value": "tegalsari", "label": "Kelurahan Tegalsari" },
+      { "value": "luar_tegalsari", "label": "Di luar Kelurahan Tegalsari" }
+    ]
+  },
+  {
+    "id": "KTP-Q05",
+    "serviceId": "ktp",
+    "factKey": "alasan_pengajuan_ktp",
+    "teks": "Apa alasan pengajuan KTP?",
+    "urutan": 50,
+    "aktif": true,
+    "showIf": { "fact": "sudah_punya_ktp", "op": "equals", "value": "ya" },
+    "opsi": [
+      { "value": "hilang", "label": "Hilang" },
+      { "value": "rusak", "label": "Rusak" },
+      { "value": "pindah_datang", "label": "Pindah datang" },
+      { "value": "perubahan_data", "label": "Perubahan data" }
+    ]
+  },
+  {
+    "id": "KK-Q01",
+    "serviceId": "kk",
+    "factKey": "kondisi_kk",
+    "teks": "Bagaimana kondisi Kartu Keluarga Anda?",
+    "urutan": 10,
+    "aktif": true,
+    "opsi": [
+      { "value": "belum_punya", "label": "Belum pernah punya" },
+      { "value": "pindah_datang", "label": "Pindah datang ke Tegalsari" },
+      { "value": "perubahan_anggota", "label": "Perubahan anggota keluarga" },
+      { "value": "hilang", "label": "Hilang" },
+      { "value": "rusak", "label": "Rusak" }
+    ]
+  },
+  {
+    "id": "KK-Q02",
+    "serviceId": "kk",
+    "factKey": "jenis_perubahan_kk",
+    "teks": "Perubahan apa yang terjadi?",
+    "urutan": 20,
+    "aktif": true,
+    "showIf": { "fact": "kondisi_kk", "op": "equals", "value": "perubahan_anggota" },
+    "opsi": [
+      { "value": "kelahiran", "label": "Kelahiran" },
+      { "value": "kematian", "label": "Kematian" },
+      { "value": "perkawinan", "label": "Perkawinan" },
+      { "value": "perpindahan", "label": "Perpindahan" }
+    ]
+  },
+  {
+    "id": "KK-Q03",
+    "serviceId": "kk",
+    "factKey": "domisili_pemohon",
+    "teks": "Di mana domisili Anda?",
+    "urutan": 30,
+    "aktif": true,
+    "opsi": [
+      { "value": "tegalsari", "label": "Kelurahan Tegalsari" },
+      { "value": "luar_tegalsari", "label": "Di luar Kelurahan Tegalsari" }
+    ]
+  },
+  {
+    "id": "DOM-Q01",
+    "serviceId": "domisili",
+    "factKey": "keperluan_domisili",
+    "teks": "Untuk keperluan apa surat domisili ini?",
+    "urutan": 10,
+    "aktif": true,
+    "opsi": [
+      { "value": "sekolah", "label": "Sekolah" },
+      { "value": "kerja", "label": "Pekerjaan" },
+      { "value": "bank", "label": "Perbankan" },
+      { "value": "usaha", "label": "Usaha" },
+      { "value": "lainnya", "label": "Lainnya" }
+    ]
+  },
+  {
+    "id": "DOM-Q02",
+    "serviceId": "domisili",
+    "factKey": "status_tinggal",
+    "teks": "Bagaimana status tinggal Anda di Tegalsari?",
+    "urutan": 20,
+    "aktif": true,
+    "opsi": [
+      { "value": "warga_tetap", "label": "Warga tetap" },
+      { "value": "tinggal_sementara", "label": "Tinggal sementara" }
+    ]
+  },
+  {
+    "id": "DOM-Q03",
+    "serviceId": "domisili",
+    "factKey": "punya_bukti_tinggal",
+    "teks": "Apakah Anda memiliki bukti tinggal?",
+    "urutan": 30,
+    "aktif": true,
+    "showIf": { "fact": "status_tinggal", "op": "equals", "value": "tinggal_sementara" },
+    "opsi": [
+      { "value": "ya", "label": "Ya" },
+      { "value": "tidak", "label": "Tidak" }
+    ]
+  }
+]

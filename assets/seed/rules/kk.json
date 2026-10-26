@@ -1,0 +1,147 @@
+[
+  {
+    "id": "KK-R01",
+    "serviceId": "kk",
+    "priority": 80,
+    "aktif": true,
+    "deskripsi": "Pengajuan KK baru karena belum pernah memiliki KK.",
+    "when": [
+      { "fact": "kondisi_kk", "op": "equals", "value": "belum_punya" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_AKTA_NIKAH", "REQ_KK_ORTU", "REQ_KTP_SUAMI_ISTRI", "REQ_PENGANTAR_RTRW", "REQ_F101"],
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KK-R02",
+    "serviceId": "kk",
+    "priority": 80,
+    "aktif": true,
+    "deskripsi": "Pengajuan KK karena pindah datang dari luar Kota Semarang.",
+    "when": [
+      { "fact": "kondisi_kk", "op": "equals", "value": "pindah_datang" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_SKPWNI", "REQ_KK_ASAL", "REQ_KTP_PEMOHON", "REQ_PENGANTAR_RTRW", "REQ_F101"],
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KK-R03",
+    "serviceId": "kk",
+    "priority": 85,
+    "aktif": true,
+    "deskripsi": "Perubahan anggota KK karena kelahiran.",
+    "when": [
+      { "fact": "jenis_perubahan_kk", "op": "equals", "value": "kelahiran" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_AKTA_KELAHIRAN", "REQ_KK_LAMA", "REQ_KTP_ORTU", "REQ_F101"],
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KK-R04",
+    "serviceId": "kk",
+    "priority": 85,
+    "aktif": true,
+    "deskripsi": "Perubahan anggota KK karena kematian.",
+    "when": [
+      { "fact": "jenis_perubahan_kk", "op": "equals", "value": "kematian" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_AKTA_KEMATIAN", "REQ_KK_LAMA", "REQ_KTP_PELAPOR", "REQ_F101"],
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KK-R05",
+    "serviceId": "kk",
+    "priority": 85,
+    "aktif": true,
+    "deskripsi": "Perubahan anggota KK karena perkawinan.",
+    "when": [
+      { "fact": "jenis_perubahan_kk", "op": "equals", "value": "perkawinan" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_AKTA_NIKAH", "REQ_KK_LAMA", "REQ_KTP_PASANGAN", "REQ_F101"],
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KK-R06",
+    "serviceId": "kk",
+    "priority": 85,
+    "aktif": true,
+    "deskripsi": "Perubahan anggota KK karena perpindahan.",
+    "when": [
+      { "fact": "jenis_perubahan_kk", "op": "equals", "value": "perpindahan" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_SKPWNI_SKPTB", "REQ_KK_LAMA", "REQ_KTP_ANGGOTA", "REQ_F101"],
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KK-R07",
+    "serviceId": "kk",
+    "priority": 75,
+    "aktif": true,
+    "deskripsi": "Penggantian KK karena hilang.",
+    "when": [
+      { "fact": "kondisi_kk", "op": "equals", "value": "hilang" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_SURAT_KEHILANGAN", "REQ_KK_FOTO", "REQ_KTP_PEMOHON", "REQ_F101"],
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KK-R08",
+    "serviceId": "kk",
+    "priority": 75,
+    "aktif": true,
+    "deskripsi": "Penggantian KK karena rusak.",
+    "when": [
+      { "fact": "kondisi_kk", "op": "equals", "value": "rusak" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_KK_LAMA", "REQ_KTP_PEMOHON", "REQ_F101"],
+      "addNotes": []
+    }
+  },
+  {
+    "id": "KK-R10",
+    "serviceId": "kk",
+    "priority": 99,
+    "aktif": true,
+    "deskripsi": "Pemohon berdomisili di luar Kelurahan Tegalsari dan bukan pindah datang, sehingga perubahan KK dilakukan di kelurahan domisili.",
+    "when": [
+      { "fact": "domisili_pemohon", "op": "equals", "value": "luar_tegalsari" },
+      { "fact": "kondisi_kk", "op": "notEquals", "value": "pindah_datang" }
+    ],
+    "then": {
+      "setOutcome": "tidak_dapat_diproses",
+      "terminal": true,
+      "addRequirements": [],
+      "addNotes": ["Perubahan KK dilakukan di kelurahan domisili pemohon."]
+    }
+  }
+]

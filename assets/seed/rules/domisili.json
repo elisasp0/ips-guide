@@ -1,0 +1,81 @@
+[
+  {
+    "id": "DOM-R01",
+    "serviceId": "domisili",
+    "priority": 80,
+    "aktif": true,
+    "deskripsi": "Pemohon adalah warga tetap Kelurahan Tegalsari.",
+    "when": [
+      { "fact": "status_tinggal", "op": "equals", "value": "warga_tetap" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_KTP_EL", "REQ_KK_LAMA", "REQ_PENGANTAR_RTRW", "REQ_F101"],
+      "addNotes": []
+    }
+  },
+  {
+    "id": "DOM-R02",
+    "serviceId": "domisili",
+    "priority": 80,
+    "aktif": true,
+    "deskripsi": "Pemohon tinggal sementara di wilayah Kelurahan Tegalsari.",
+    "when": [
+      { "fact": "status_tinggal", "op": "equals", "value": "tinggal_sementara" }
+    ],
+    "then": {
+      "setOutcome": "dapat_diproses",
+      "terminal": false,
+      "addRequirements": ["REQ_KTP_ASAL", "REQ_KK_LAMA", "REQ_SURAT_PERNYATAAN", "REQ_BUKTI_TINGGAL", "REQ_PENGANTAR_RTRW", "REQ_F101"],
+      "addNotes": []
+    }
+  },
+  {
+    "id": "DOM-R03",
+    "serviceId": "domisili",
+    "priority": 85,
+    "aktif": true,
+    "deskripsi": "Pemohon tinggal sementara tanpa bukti tinggal sehingga hasil dengan catatan.",
+    "when": [
+      { "fact": "status_tinggal", "op": "equals", "value": "tinggal_sementara" },
+      { "fact": "punya_bukti_tinggal", "op": "equals", "value": "tidak" }
+    ],
+    "then": {
+      "setOutcome": "dengan_catatan",
+      "terminal": false,
+      "addRequirements": [],
+      "addNotes": ["Bukti tinggal wajib dilengkapi (mis. surat keterangan pemilik rumah)."]
+    }
+  },
+  {
+    "id": "DOM-R04",
+    "serviceId": "domisili",
+    "priority": 85,
+    "aktif": true,
+    "deskripsi": "Keperluan usaha menambah persyaratan khusus tanpa mengubah outcome.",
+    "when": [
+      { "fact": "keperluan_domisili", "op": "equals", "value": "usaha" }
+    ],
+    "then": {
+      "terminal": false,
+      "addRequirements": ["REQ_FOTO_LOKASI_USAHA", "REQ_SURAT_TETANGGA"],
+      "addNotes": []
+    }
+  },
+  {
+    "id": "DOM-R05",
+    "serviceId": "domisili",
+    "priority": 70,
+    "aktif": true,
+    "deskripsi": "Keperluan sekolah disertai keterangan tujuan.",
+    "when": [
+      { "fact": "keperluan_domisili", "op": "equals", "value": "sekolah" }
+    ],
+    "then": {
+      "terminal": false,
+      "addRequirements": [],
+      "addNotes": ["Sertakan keterangan tujuan sekolah."]
+    }
+  }
+]

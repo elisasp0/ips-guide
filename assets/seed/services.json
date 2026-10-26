@@ -1,0 +1,35 @@
+[
+  {
+    "id": "ktp",
+    "nama": "Kartu Tanda Penduduk Elektronik",
+    "deskripsi": "Pengurusan KTP-el: baru, penggantian, dan perubahan data.",
+    "ikon": "badge",
+    "urutan": 1,
+    "estimasiHariMin": 3,
+    "estimasiHariMax": 7,
+    "aktif": true,
+    "stepsDasar": ["STEP_LOKET", "STEP_SERAH_BERKAS", "STEP_VERIFIKASI", "STEP_REKAM", "STEP_AMBIL"]
+  },
+  {
+    "id": "kk",
+    "nama": "Kartu Keluarga",
+    "deskripsi": "Pengurusan KK: baru, pindah datang, dan perubahan anggota.",
+    "ikon": "family_restroom",
+    "urutan": 2,
+    "estimasiHariMin": 3,
+    "estimasiHariMax": 7,
+    "aktif": true,
+    "stepsDasar": ["STEP_LOKET", "STEP_SERAH_BERKAS", "STEP_VERIFIKASI", "STEP_DISDUKCAPIL", "STEP_AMBIL"]
+  },
+  {
+    "id": "domisili",
+    "nama": "Surat Keterangan Domisili",
+    "deskripsi": "Surat keterangan domisili untuk sekolah, kerja, bank, dan usaha.",
+    "ikon": "home",
+    "urutan": 3,
+    "estimasiHariMin": 1,
+    "estimasiHariMax": 2,
+    "aktif": true,
+    "stepsDasar": ["STEP_LOKET", "STEP_SERAH_BERKAS", "STEP_VERIFIKASI", "STEP_TTD_LURAH", "STEP_AMBIL"]
+  }
+]

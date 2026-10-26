@@ -1,0 +1,51 @@
+[
+  {
+    "id": "STEP_LOKET",
+    "judul": "Datang ke loket pelayanan",
+    "keterangan": "Kelurahan Tegalsari, ambil nomor antrean",
+    "urutan": 10,
+    "aktif": true
+  },
+  {
+    "id": "STEP_SERAH_BERKAS",
+    "judul": "Serahkan berkas",
+    "keterangan": "Petugas memeriksa kelengkapan awal",
+    "urutan": 20,
+    "aktif": true
+  },
+  {
+    "id": "STEP_VERIFIKASI",
+    "judul": "Verifikasi dan validasi",
+    "keterangan": "Pencocokan dokumen dengan data pemohon",
+    "urutan": 30,
+    "aktif": true
+  },
+  {
+    "id": "STEP_REKAM",
+    "judul": "Perekaman biometrik",
+    "keterangan": "Dilakukan bila petugas menilai perlu (KTP)",
+    "urutan": 40,
+    "aktif": true
+  },
+  {
+    "id": "STEP_DISDUKCAPIL",
+    "judul": "Diteruskan ke Disdukcapil",
+    "keterangan": "Kota Semarang (KK)",
+    "urutan": 40,
+    "aktif": true
+  },
+  {
+    "id": "STEP_TTD_LURAH",
+    "judul": "Penandatanganan Lurah",
+    "keterangan": "Surat domisili",
+    "urutan": 40,
+    "aktif": true
+  },
+  {
+    "id": "STEP_AMBIL",
+    "judul": "Pengambilan dokumen",
+    "keterangan": "Sesuai estimasi hari kerja",
+    "urutan": 50,
+    "aktif": true
+  }
+]
