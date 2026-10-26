@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ips_guide/data/providers.dart';
+import 'package:ips_guide/data/repositories/auth_repository.dart';
+import 'package:ips_guide/data/repositories/in_memory_auth_repository.dart';
 import 'package:ips_guide/data/repositories/in_memory_knowledge_base_repository.dart';
 
 /// Utilitas pompa & penyiapan untuk uji widget IPS-Guide.
@@ -45,23 +47,36 @@ Future<void> tunggu(WidgetTester tester, Finder finder) async {
 /// jalur pemuatan aset sendiri sudah diuji di `test/data` dan `test/scenario`.
 late InMemoryKnowledgeBaseRepository testRepository;
 
+/// Repository autentikasi bersama, sudah dalam keadaan MASUK sebagai warga.
+///
+/// Uji yang membutuhkan keadaan lain (belum masuk, admin, profil hilang)
+/// membuat instance sendiri dan mengopernya ke [bungkusAplikasi].
+late InMemoryAuthRepository testAuth;
+
 /// Dipakai sebagai `setUpAll(siapkanRepository)`.
 Future<void> siapkanRepository() async {
   TestWidgetsFlutterBinding.ensureInitialized();
   testRepository = await InMemoryKnowledgeBaseRepository.fromAssets();
+  testAuth = InMemoryAuthRepository();
+  await testAuth.masuk(
+    email: InMemoryAuthRepository.emailWargaDemo,
+    password: InMemoryAuthRepository.sandiDemo,
+  );
 }
 
-/// Bungkus widget uji dengan `ProviderScope` yang memakai [testRepository].
-Widget bungkusAplikasi(Widget child) => ProviderScope(
+/// Bungkus widget uji dengan `ProviderScope` yang memakai repository uji.
+Widget bungkusAplikasi(Widget child, {AuthRepository? auth}) => ProviderScope(
       overrides: [
         repositoryProvider.overrideWithValue(AsyncData(testRepository)),
+        authRepositoryProvider.overrideWithValue(auth ?? testAuth),
       ],
       child: child,
     );
 
 /// `ProviderContainer` dengan override yang sama (untuk uji rute langsung).
-ProviderContainer buatContainer() => ProviderContainer(
+ProviderContainer buatContainer({AuthRepository? auth}) => ProviderContainer(
       overrides: [
         repositoryProvider.overrideWithValue(AsyncData(testRepository)),
+        authRepositoryProvider.overrideWithValue(auth ?? testAuth),
       ],
     );

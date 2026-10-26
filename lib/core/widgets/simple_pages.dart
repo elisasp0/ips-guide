@@ -35,6 +35,38 @@ class PlaceholderPage extends StatelessWidget {
   }
 }
 
+/// Halaman splash — ditampilkan selama status sesi belum diketahui (§9.1).
+class SplashPage extends StatelessWidget {
+  const SplashPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'IPS-Guide',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 16),
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Halaman 404 — rute tidak dikenal (§15 Tahap 3).
 class NotFoundPage extends StatelessWidget {
   const NotFoundPage({super.key});

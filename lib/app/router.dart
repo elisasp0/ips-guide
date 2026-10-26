@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/widgets/simple_pages.dart';
+import '../features/auth/application/auth_controller.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/guidance/presentation/guidance_tab_page.dart';
 import '../features/guidance/presentation/pertanyaan_page.dart';
@@ -10,13 +12,43 @@ import '../features/result/presentation/hasil_page.dart';
 import '../features/services/presentation/service_list_page.dart';
 import 'shell.dart';
 
-/// Navigasi (§3.6): ShellRoute untuk tiga tab utama; di luar shell:
-/// /login, /panduan/:serviceId (H4), /hasil (H5), /admin (H6).
+/// Navigasi (§3.6) + guard autentikasi (§9.1, Tahap 5).
 ///
-/// Guard login/peran ditambahkan pada Tahap 5 (autentikasi).
+/// ShellRoute untuk tiga tab utama; di luar shell: /login, /panduan/:serviceId
+/// (H4), /hasil (H5), /admin (H6).
+///
+/// Guard di sini bersifat **kenyamanan**, bukan keamanan (U-05): ia dapat
+/// dilewati lewat SDK. Yang menentukan adalah Firestore rules (Tahap 6).
 final routerProvider = Provider<GoRouter>((ref) {
+  // Beri tahu GoRouter saat status sesi berubah, tanpa membangun ulang router
+  // (membangun ulang akan kehilangan riwayat navigasi).
+  final pemicu = ValueNotifier<int>(0);
+  ref.listen<AuthState>(authControllerProvider, (_, _) => pemicu.value++);
+  ref.onDispose(pemicu.dispose);
+
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: pemicu,
+    redirect: (context, state) {
+      final auth = ref.read(authControllerProvider);
+      final diLogin = state.matchedLocation == '/login';
+
+      // Status belum diketahui — halaman splash ditangani IpsGuideApp.
+      if (auth.status == AuthStatus.memuat) return null;
+
+      // Belum masuk ATAU profil hilang (U-07): keduanya harus di H1.
+      if (auth.status != AuthStatus.masuk) {
+        return diLogin ? null : '/login';
+      }
+
+      if (diLogin) return '/';
+
+      // S25: warga yang membuka /admin dialihkan ke Beranda.
+      if (state.matchedLocation.startsWith('/admin') && !auth.isAdmin) {
+        return '/';
+      }
+      return null;
+    },
     routes: [
       ShellRoute(
         builder: (context, state, child) {
@@ -69,8 +101,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin',
         name: 'admin',
-        builder: (context, state) =>
-            const PlaceholderPage(title: 'Kelola Panduan', pesan: 'Dibangun pada Tahap 7.'),
+        builder: (context, state) => const PlaceholderPage(
+          title: 'Kelola Panduan',
+          pesan: 'Dibangun pada Tahap 7.',
+        ),
       ),
     ],
     errorBuilder: (context, state) => const NotFoundPage(),

@@ -1,18 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/layout/responsive.dart';
+import '../../auth/application/auth_controller.dart';
 
 /// H2 Beranda (§5, wireframe Minggu 4): sapaan, kartu layanan, tombol
-/// "Mulai Panduan".
-class HomePage extends StatelessWidget {
+/// "Mulai Panduan", serta aksi sesi (Keluar, Kelola Panduan untuk admin).
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final auth = ref.watch(authControllerProvider);
+    final nama = auth.user?.nama;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('IPS-Guide')),
+      appBar: AppBar(
+        title: const Text('IPS-Guide'),
+        actions: [
+          IconButton(
+            key: const Key('h2-keluar'),
+            tooltip: 'Keluar',
+            icon: const Icon(Icons.logout),
+            onPressed: () =>
+                ref.read(authControllerProvider.notifier).keluar(),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -24,7 +40,9 @@ class HomePage extends StatelessWidget {
                 children: [
                   const SizedBox(height: 8),
                   Text(
-                    'Selamat datang',
+                    nama == null
+                        ? 'Selamat datang'
+                        : 'Selamat datang, $nama',
                     style: theme.textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
@@ -42,7 +60,10 @@ class HomePage extends StatelessWidget {
                     label: const Text('Mulai Panduan'),
                   ),
                   const SizedBox(height: 24),
-                  Text('Layanan yang tersedia', style: theme.textTheme.titleMedium),
+                  Text(
+                    'Layanan yang tersedia',
+                    style: theme.textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   _KartuLayanan(
                     ikon: Icons.badge_outlined,
@@ -59,6 +80,25 @@ class HomePage extends StatelessWidget {
                     judul: 'Surat Keterangan Domisili',
                     onTap: () => context.go('/panduan/domisili'),
                   ),
+                  // Menu admin hanya untuk peran admin (S25). Guard rute tetap
+                  // menolak akses langsung lewat URL.
+                  if (auth.isAdmin) ...[
+                    const SizedBox(height: 24),
+                    Text('Administrasi', style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    Card(
+                      child: ListTile(
+                        key: const Key('h2-kelola-panduan'),
+                        onTap: () => context.go('/admin'),
+                        leading: const Icon(Icons.tune_outlined),
+                        title: const Text('Kelola Panduan'),
+                        subtitle: const Text(
+                          'Tambah, ubah, atau nonaktifkan aturan panduan.',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Text(
                     'Informasi di aplikasi ini bersifat panduan dan belum '

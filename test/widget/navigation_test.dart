@@ -36,7 +36,7 @@ void main() {
     await tunggu(tester, find.text('Belum ada panduan yang sedang berjalan'));
 
     await tester.tap(find.text('Beranda').last);
-    await tunggu(tester, find.text('Selamat datang'));
+    await tunggu(tester, find.textContaining('Selamat datang'));
   });
 
   testWidgets('Kartu layanan di Beranda menuju H4 Pertanyaan Panduan',
