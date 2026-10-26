@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../core/widgets/simple_pages.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/guidance/presentation/guidance_tab_page.dart';
+import '../features/guidance/presentation/pertanyaan_page.dart';
 import '../features/home/presentation/home_page.dart';
+import '../features/result/presentation/hasil_page.dart';
 import '../features/services/presentation/service_list_page.dart';
 import 'shell.dart';
 
@@ -55,17 +57,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/panduan/:serviceId',
         name: 'pertanyaan',
-        builder: (context, state) => PlaceholderPage(
-          title: 'Pertanyaan Panduan',
-          pesan: 'Dibangun pada Tahap 4 '
-              '(layanan: ${state.pathParameters['serviceId'] ?? '-'}).',
+        builder: (context, state) => PertanyaanPage(
+          serviceId: state.pathParameters['serviceId'] ?? '',
         ),
       ),
       GoRoute(
         path: '/hasil',
         name: 'hasil',
-        builder: (context, state) =>
-            const PlaceholderPage(title: 'Hasil Panduan', pesan: 'Dibangun pada Tahap 4.'),
+        builder: (context, state) => const HasilPage(),
       ),
       GoRoute(
         path: '/admin',
