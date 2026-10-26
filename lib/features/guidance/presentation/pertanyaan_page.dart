@@ -19,6 +19,7 @@ class PertanyaanPage extends ConsumerStatefulWidget {
 class _PertanyaanPageState extends ConsumerState<PertanyaanPage> {
   String? _pilihanUntukPertanyaan; // id pertanyaan yang sedang dipilih
   String? _pilihan;
+  String? _pesanPilihan; // keadaan "jawaban belum lengkap" (§5.1)
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +52,7 @@ class _PertanyaanPageState extends ConsumerState<PertanyaanPage> {
     if (question != null && _pilihanUntukPertanyaan != question.id) {
       _pilihanUntukPertanyaan = question.id;
       _pilihan = null;
+      _pesanPilihan = null;
     }
 
     return Scaffold(
@@ -122,7 +124,10 @@ class _PertanyaanPageState extends ConsumerState<PertanyaanPage> {
                               const SizedBox(height: 8),
                               RadioGroup<String>(
                                 groupValue: _pilihan,
-                                onChanged: (v) => setState(() => _pilihan = v),
+                                onChanged: (v) => setState(() {
+                                  _pilihan = v;
+                                  _pesanPilihan = null;
+                                }),
                                 child: Column(
                                   children: [
                                     for (final opsi in question.opsi)
@@ -140,6 +145,20 @@ class _PertanyaanPageState extends ConsumerState<PertanyaanPage> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      // Keadaan alternatif §5.1: "jawaban belum lengkap".
+                      // Tombol tetap aktif agar alasannya dapat dijelaskan —
+                      // tombol mati tanpa keterangan membingungkan pengguna.
+                      if (_pesanPilihan != null) ...[
+                        Text(
+                          _pesanPilihan!,
+                          key: const Key('h4-pesan-pilihan'),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.error,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       Row(
                         children: [
                           OutlinedButton(
@@ -152,11 +171,20 @@ class _PertanyaanPageState extends ConsumerState<PertanyaanPage> {
                           ),
                           const Spacer(),
                           FilledButton(
-                            onPressed: _pilihan == null
-                                ? null
-                                : () => ref
-                                    .read(guidanceControllerProvider.notifier)
-                                    .jawab(_pilihan!),
+                            onPressed: () {
+                              final pilihan = _pilihan;
+                              if (pilihan == null) {
+                                setState(
+                                  () => _pesanPilihan =
+                                      'Pilih salah satu jawaban untuk '
+                                      'melanjutkan.',
+                                );
+                                return;
+                              }
+                              ref
+                                  .read(guidanceControllerProvider.notifier)
+                                  .jawab(pilihan);
+                            },
                             child: const Text('Lanjut'),
                           ),
                         ],
