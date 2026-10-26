@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/widgets/simple_pages.dart';
+import '../features/admin/presentation/admin_page.dart';
+import '../features/admin/presentation/kelola_layanan_page.dart';
 import '../features/auth/application/auth_controller.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/guidance/presentation/guidance_tab_page.dart';
@@ -101,10 +103,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin',
         name: 'admin',
-        builder: (context, state) => const PlaceholderPage(
-          title: 'Kelola Panduan',
-          pesan: 'Dibangun pada Tahap 7.',
-        ),
+        builder: (context, state) => const AdminPage(),
+        routes: [
+          GoRoute(
+            path: ':serviceId',
+            name: 'admin-layanan',
+            builder: (context, state) => KelolaLayananPage(
+              serviceId: state.pathParameters['serviceId'] ?? '',
+            ),
+          ),
+        ],
       ),
     ],
     errorBuilder: (context, state) => const NotFoundPage(),

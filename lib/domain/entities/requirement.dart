@@ -16,4 +16,16 @@ class Requirement {
     this.wajib = true,
     required this.sourceRuleId,
   });
+
+  /// Dipakai jalur simpan H6 (§12.3 tahap B: ubah nama/keterangan).
+  ///
+  /// `sourceRuleId` sengaja tidak dapat diubah — ia explanation facility yang
+  /// diturunkan dari aturan, bukan data yang diisi admin.
+  Requirement copyWith({String? nama, String? keterangan}) => Requirement(
+        id: id,
+        nama: nama ?? this.nama,
+        keterangan: keterangan ?? this.keterangan,
+        wajib: wajib,
+        sourceRuleId: sourceRuleId,
+      );
 }

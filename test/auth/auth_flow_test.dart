@@ -141,7 +141,7 @@ void main() {
     container.read(routerProvider).go('/admin');
     await tunggu(tester, find.text('Mulai Panduan'));
 
-    expect(find.text('Dibangun pada Tahap 7.'), findsNothing);
+    expect(find.byKey(const Key('admin-layanan-ktp')), findsNothing);
     expect(find.text('Kelola Panduan'), findsNothing);
   });
 
@@ -165,7 +165,7 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('h2-kelola-panduan')));
     await tenang(tester);
     await tester.tap(find.byKey(const Key('h2-kelola-panduan')));
-    await tunggu(tester, find.text('Dibangun pada Tahap 7.'));
+    await tunggu(tester, find.byKey(const Key('admin-layanan-ktp')));
   });
 
   testWidgets('Keluar dari Beranda kembali ke H1', (tester) async {

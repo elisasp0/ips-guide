@@ -29,4 +29,17 @@ class GuidanceQuestion {
     this.showIf,
     this.aktif = true,
   });
+
+  /// Dipakai jalur simpan H6 (§12.3 tahap B: ubah teks pertanyaan).
+  GuidanceQuestion copyWith({String? teks, int? urutan, bool? aktif}) =>
+      GuidanceQuestion(
+        id: id,
+        serviceId: serviceId,
+        factKey: factKey,
+        teks: teks ?? this.teks,
+        urutan: urutan ?? this.urutan,
+        opsi: opsi,
+        showIf: showIf,
+        aktif: aktif ?? this.aktif,
+      );
 }

@@ -22,4 +22,16 @@ class Rule {
     required this.then,
     this.aktif = true,
   });
+
+  /// Dipakai jalur simpan H6 (§12.5) — hanya field yang boleh diubah admin
+  /// yang diekspos; `id`, `serviceId`, `when`, dan `then` tetap.
+  Rule copyWith({int? priority, String? deskripsi, bool? aktif}) => Rule(
+        id: id,
+        serviceId: serviceId,
+        priority: priority ?? this.priority,
+        deskripsi: deskripsi ?? this.deskripsi,
+        when: when,
+        then: then,
+        aktif: aktif ?? this.aktif,
+      );
 }

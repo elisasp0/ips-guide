@@ -65,18 +65,30 @@ Future<void> siapkanRepository() async {
 }
 
 /// Bungkus widget uji dengan `ProviderScope` yang memakai repository uji.
-Widget bungkusAplikasi(Widget child, {AuthRepository? auth}) => ProviderScope(
+///
+/// [kb] dapat diisi repository segar (mis. uji H6 yang mengubah data) agar
+/// tidak mencemari uji lain dalam berkas yang sama.
+Widget bungkusAplikasi(
+  Widget child, {
+  AuthRepository? auth,
+  InMemoryKnowledgeBaseRepository? kb,
+}) =>
+    ProviderScope(
       overrides: [
-        repositoryProvider.overrideWithValue(AsyncData(testRepository)),
+        repositoryProvider.overrideWithValue(AsyncData(kb ?? testRepository)),
         authRepositoryProvider.overrideWithValue(auth ?? testAuth),
       ],
       child: child,
     );
 
 /// `ProviderContainer` dengan override yang sama (untuk uji rute langsung).
-ProviderContainer buatContainer({AuthRepository? auth}) => ProviderContainer(
+ProviderContainer buatContainer({
+  AuthRepository? auth,
+  InMemoryKnowledgeBaseRepository? kb,
+}) =>
+    ProviderContainer(
       overrides: [
-        repositoryProvider.overrideWithValue(AsyncData(testRepository)),
+        repositoryProvider.overrideWithValue(AsyncData(kb ?? testRepository)),
         authRepositoryProvider.overrideWithValue(auth ?? testAuth),
       ],
     );
