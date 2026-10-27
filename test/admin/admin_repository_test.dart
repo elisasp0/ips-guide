@@ -2,10 +2,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ips_guide/data/repositories/in_memory_knowledge_base_repository.dart';
 import 'package:ips_guide/data/repositories/knowledge_base_repository.dart';
 import 'package:ips_guide/data/seed/seed_loader.dart';
+import 'package:ips_guide/domain/entities/answer_option.dart';
+import 'package:ips_guide/domain/entities/guidance_question.dart';
 import 'package:ips_guide/domain/entities/knowledge_base.dart';
+import 'package:ips_guide/domain/entities/rule.dart';
+import 'package:ips_guide/domain/entities/rule_action.dart';
+import 'package:ips_guide/domain/entities/rule_condition.dart';
 import 'package:ips_guide/domain/engine/guidance_session.dart';
 
-/// Uji jalur simpan H6 (§12.5, S28, S33, S44).
+/// Uji jalur simpan H6 (§12.5, S28, S33, S44) dan tahap C/D (§12.3).
 ///
 /// Repository dibangun ulang dari `SeedData` yang sama untuk setiap uji agar
 /// perubahan satu uji tidak bocor ke uji lain.
@@ -123,5 +128,142 @@ void main() {
       repo.simpanAturan('domisili', asing),
       throwsA(isA<KnowledgeBaseException>()),
     );
+  });
+
+  // ------------------------------------------------------- tahap C: create
+
+  test('Tahap C: aturan baru langsung dipakai sesi berikutnya', () async {
+    // Non-terminal & berprioritas di bawah aturan terminal terkecil (95),
+    // agar tidak melanggar V-3.
+    await repo.tambahAturan(
+      'ktp',
+      const Rule(
+        id: 'KTP-R50',
+        serviceId: 'ktp',
+        priority: 50,
+        deskripsi: 'Uji: pemohon belum punya KTP',
+        when: [RuleCondition(fact: 'sudah_punya_ktp', value: 'tidak')],
+        then: RuleAction(addNotes: ['Catatan uji']),
+      ),
+    );
+
+    final kb = await repo.loadService('ktp');
+    expect(kb.rules.any((r) => r.id == 'KTP-R50'), isTrue);
+
+    // Aturan yang baru dibuat ikut menyala tanpa mengubah kode apa pun.
+    final hasil = sesiKtp(kb).buildResult();
+    expect(hasil.notes.map((n) => n.teks), contains('Catatan uji'));
+    expect(
+      hasil.trace.firstWhere((t) => t.ruleId == 'KTP-R50').addNotes,
+      contains('Catatan uji'),
+    );
+    expect(repo.validationErrors, isEmpty);
+  });
+
+  test('Tahap C: ID aturan duplikat ditolak tanpa mengubah data', () async {
+    final kb = await repo.loadService('ktp');
+    final r01 = kb.rules.firstWhere((r) => r.id == 'KTP-R01');
+
+    await expectLater(
+      repo.tambahAturan('ktp', r01),
+      throwsA(
+        isA<KnowledgeBaseException>().having(
+          (e) => e.message,
+          'message',
+          contains('sudah ada'),
+        ),
+      ),
+    );
+
+    final akhir = await repo.loadService('ktp');
+    expect(akhir.rules.where((r) => r.id == 'KTP-R01').length, 1);
+  });
+
+  test('Tahap C: aturan terminal tanpa outcome ditolak (V-1)', () async {
+    await expectLater(
+      repo.tambahAturan(
+        'ktp',
+        const Rule(
+          id: 'KTP-R60',
+          serviceId: 'ktp',
+          priority: 100,
+          deskripsi: 'Terminal tanpa outcome',
+          when: [RuleCondition(fact: 'sudah_punya_ktp', value: 'tidak')],
+          then: RuleAction(terminal: true),
+        ),
+      ),
+      throwsA(
+        isA<KnowledgeBaseException>().having(
+          (e) => e.errors.join(' '),
+          'errors',
+          contains('V-1'),
+        ),
+      ),
+    );
+
+    // Basis pengetahuan lama tetap utuh — aturan yang ditolak tidak tersisa.
+    final kb = await repo.loadService('ktp');
+    expect(kb.rules.any((r) => r.id == 'KTP-R60'), isFalse);
+    expect(repo.validationErrors, isEmpty);
+  });
+
+  test('Tahap C: pertanyaan baru tersimpan; factKey duplikat ditolak', () async {
+    const pertanyaan = GuidanceQuestion(
+      id: 'KK-Q99',
+      serviceId: 'kk',
+      factKey: 'uji_baru',
+      teks: 'Pertanyaan uji?',
+      urutan: 90,
+      opsi: [
+        AnswerOption(value: 'ya', label: 'Ya'),
+        AnswerOption(value: 'tidak', label: 'Tidak'),
+      ],
+    );
+
+    await repo.tambahPertanyaan('kk', pertanyaan);
+    final kb = await repo.loadService('kk');
+    expect(kb.questions.any((q) => q.id == 'KK-Q99'), isTrue);
+
+    // factKey wajib unik dalam satu layanan (§10.4.1 poin 6).
+    await expectLater(
+      repo.tambahPertanyaan(
+        'kk',
+        const GuidanceQuestion(
+          id: 'KK-Q98',
+          serviceId: 'kk',
+          factKey: 'kondisi_kk',
+          teks: 'Duplikat factKey?',
+          urutan: 91,
+          opsi: [
+            AnswerOption(value: 'ya', label: 'Ya'),
+            AnswerOption(value: 'tidak', label: 'Tidak'),
+          ],
+        ),
+      ),
+      throwsA(
+        isA<KnowledgeBaseException>().having(
+          (e) => e.message,
+          'message',
+          contains('factKey'),
+        ),
+      ),
+    );
+
+    final akhir = await repo.loadService('kk');
+    expect(akhir.questions.any((q) => q.id == 'KK-Q98'), isFalse);
+    expect(akhir.questions.where((q) => q.factKey == 'kondisi_kk').length, 1);
+  });
+
+  // ------------------------------------------------- tahap D: nonaktifkan
+
+  test('Tahap D: nonaktifkan aturan penentu → panduan belum tersedia',
+      () async {
+    final kbAwal = await repo.loadService('domisili');
+    final r01 = kbAwal.rules.firstWhere((r) => r.id == 'DOM-R01');
+    await repo.simpanAturan('domisili', r01.copyWith(aktif: false));
+
+    final kb = await repo.loadService('domisili');
+    // Dokumen nonaktif TETAP ada di basis pengetahuan (§12.4) …
+    expect(kb.rules.any((r) => r.id == 'DOM-R01' && !r.aktif), isTrue);
   });
 }

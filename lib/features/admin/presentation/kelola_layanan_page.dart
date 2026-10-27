@@ -5,18 +5,26 @@ import '../../../app/theme.dart';
 import '../../../core/layout/responsive.dart';
 import '../../../data/providers.dart';
 import '../../../data/repositories/knowledge_base_repository.dart';
+import '../../../domain/entities/answer_option.dart';
 import '../../../domain/entities/guidance_question.dart';
 import '../../../domain/entities/knowledge_base.dart';
+import '../../../domain/entities/outcome.dart';
 import '../../../domain/entities/requirement.dart';
 import '../../../domain/entities/rule.dart';
+import '../../../domain/entities/rule_action.dart';
+import '../../../domain/entities/rule_condition.dart';
 import '../application/admin_providers.dart';
 
-/// H6 Kelola Panduan — satu layanan (§5, §12.3 tahap A + B).
+/// H6 Kelola Panduan — satu layanan (§5, §12.3 tahap A–D).
 ///
 /// Tahap A: menampilkan aturan, pertanyaan, persyaratan, dan tahapan —
 /// termasuk dokumen NON-AKTIF dengan label "Nonaktif" (§12.4).
 /// Tahap B: mengubah prioritas aturan, teks pertanyaan, nama/keterangan
 /// persyaratan, serta mengaktifkan/menonaktifkan dokumen.
+/// Tahap C: menambah aturan dan pertanyaan lewat form — membuktikan basis
+/// pengetahuan dapat diperluas tanpa mengubah kode.
+/// Tahap D: menonaktifkan dokumen SELALU lewat konfirmasi; penghapusan
+/// fisik tidak dipakai agar tidak ada rujukan terputus (§12.3 D).
 ///
 /// Setiap penyimpanan melewati validator yang sama dengan jalur muat
 /// (§12.5, V-02). Penolakan menampilkan kode pelanggaran + saran perbaikan.
@@ -109,6 +117,12 @@ class _KelolaLayananPageState extends ConsumerState<KelolaLayananPage> {
       return 'Naikkan prioritas aturan terminal sehingga lebih tinggi dari '
           'SEMUA aturan non-terminal pada layanan ini.';
     }
+    if (galat.contains('duplikat') || galat.contains('sudah')) {
+      return 'Pakai ID/factKey lain yang belum dipakai pada layanan ini.';
+    }
+    if (galat.contains('tak dikenal') || galat.contains('tidak dikenal')) {
+      return 'Pastikan rujukan menunjuk ID yang ada di katalog layanan ini.';
+    }
     return null;
   }
 
@@ -128,6 +142,38 @@ class _KelolaLayananPageState extends ConsumerState<KelolaLayananPage> {
         context: context,
         builder: (_) => DialogForm(judul: judul, kolom: kolom),
       );
+
+  /// Konfirmasi nonaktifkan (§12.3 tahap D).
+  ///
+  /// Penonaktifan tidak dapat dibatalkan lewat tombol "Urungkan", dan bila
+  /// yang dinonaktifkan adalah satu-satunya aturan penentu keputusan, seluruh
+  /// warga akan melihat "Panduan belum tersedia" — karena itu wajib
+  /// dikonfirmasi, sedangkan pengaktifan kembali tidak.
+  Future<bool> _konfirmasiNonaktif({
+    required String judul,
+    required String pesan,
+  }) async {
+    final ya = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(judul),
+        content: Text(pesan),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            key: const Key('admin-konfirmasi-nonaktif'),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Nonaktifkan'),
+          ),
+        ],
+      ),
+    );
+    return ya ?? false;
+  }
 
   // ------------------------------------------------------------------ aksi
 
@@ -151,13 +197,22 @@ class _KelolaLayananPageState extends ConsumerState<KelolaLayananPage> {
     });
   }
 
-  Future<void> _ubahAktifAturan(Rule r, bool aktif) => _simpan(() async {
-        final repo = await _repo;
-        await repo.simpanAturan(
-          widget.serviceId,
-          r.copyWith(aktif: aktif),
-        );
-      });
+  Future<void> _ubahAktifAturan(Rule r, bool aktif) async {
+    if (!aktif) {
+      final lanjut = await _konfirmasiNonaktif(
+        judul: 'Nonaktifkan ${r.id}?',
+        pesan: 'Aturan ini tidak lagi dievaluasi mesin. Bila ia satu-satunya '
+            'aturan yang menetapkan keputusan, hasil panduan menjadi '
+            '"Panduan belum tersedia". Dokumen tetap tampil di sini dan dapat '
+            'diaktifkan kembali.',
+      );
+      if (!lanjut) return;
+    }
+    await _simpan(() async {
+      final repo = await _repo;
+      await repo.simpanAturan(widget.serviceId, r.copyWith(aktif: aktif));
+    });
+  }
 
   Future<void> _ubahTeksPertanyaan(GuidanceQuestion q) async {
     final nilai = await _tanya(
@@ -182,14 +237,25 @@ class _KelolaLayananPageState extends ConsumerState<KelolaLayananPage> {
     });
   }
 
-  Future<void> _ubahAktifPertanyaan(GuidanceQuestion q, bool aktif) =>
-      _simpan(() async {
-        final repo = await _repo;
-        await repo.simpanPertanyaan(
-          widget.serviceId,
-          q.copyWith(aktif: aktif),
-        );
-      });
+  Future<void> _ubahAktifPertanyaan(GuidanceQuestion q, bool aktif) async {
+    if (!aktif) {
+      final lanjut = await _konfirmasiNonaktif(
+        judul: 'Nonaktifkan ${q.id}?',
+        pesan: 'Pertanyaan ini tidak lagi ditanyakan, sehingga fakta '
+            '"${q.factKey}" tidak pernah terisi dan aturan yang bergantung '
+            'padanya tidak akan menyala. Dokumen tetap tampil di sini dan '
+            'dapat diaktifkan kembali.',
+      );
+      if (!lanjut) return;
+    }
+    await _simpan(() async {
+      final repo = await _repo;
+      await repo.simpanPertanyaan(
+        widget.serviceId,
+        q.copyWith(aktif: aktif),
+      );
+    });
+  }
 
   Future<void> _ubahPersyaratan(Requirement r) async {
     final nilai = await _tanya(
@@ -215,6 +281,160 @@ class _KelolaLayananPageState extends ConsumerState<KelolaLayananPage> {
       await repo.simpanPersyaratan(baru);
     });
   }
+
+  /// Tahap C — tambah aturan. Kondisi dibuat sebagai SATU klausa `equals`
+  /// pada fakta yang dipilih dari daftar (bukan diketik bebas), sehingga
+  /// salah ketik `factKey` tidak mungkin terjadi. Kondisi majemuk atau
+  /// operator lain masih ditulis lewat seed/Firestore.
+  Future<void> _tambahAturan(KnowledgeBase kb) async {
+    final factKeys = kb.questions.map((q) => q.factKey).toSet().toList()
+      ..sort();
+    if (factKeys.isEmpty) {
+      await _pesan('Belum ada pertanyaan pada layanan ini. Tambah pertanyaan '
+          'lebih dulu agar aturan punya fakta yang dapat dirujuk.');
+      return;
+    }
+    final nilai = await _tanya(
+      judul: 'Aturan baru · ${kb.serviceId.toUpperCase()}',
+      kolom: [
+        KolomForm(
+          kunci: 'id',
+          label: 'ID aturan',
+          cek: (t) => RegExp(r'^[A-Z]+-R\d+$').hasMatch(t)
+              ? null
+              : 'Format <LAYANAN>-R<nn>, mis. '
+                  '${kb.serviceId.toUpperCase()}-R99.',
+        ),
+        KolomForm(kunci: 'prioritas', label: 'Prioritas', angka: true),
+        KolomForm(kunci: 'deskripsi', label: 'Deskripsi', maxLines: 2),
+        KolomForm(kunci: 'fakta', label: 'Fakta (kondisi)', pilihan: factKeys),
+        KolomForm(kunci: 'nilai', label: 'Nilai fakta'),
+        KolomForm(
+          kunci: 'terminal',
+          label: 'Terminal (hentikan sesi)',
+          saklar: true,
+          awal: 'false',
+        ),
+        KolomForm(
+          kunci: 'outcome',
+          label: 'Outcome',
+          pilihan: [
+            kTanpaOutcome,
+            for (final o in Outcome.values) o.wireName,
+          ],
+          awal: kTanpaOutcome,
+        ),
+      ],
+    );
+    if (nilai == null) return;
+
+    final aturan = Rule(
+      id: nilai[0],
+      serviceId: widget.serviceId,
+      priority: int.parse(nilai[1]),
+      deskripsi: nilai[2],
+      when: [RuleCondition(fact: nilai[3], value: nilai[4])],
+      then: RuleAction(
+        terminal: nilai[5] == 'true',
+        setOutcome: Outcome.fromWireName(nilai[6]),
+      ),
+    );
+    await _simpan(() async {
+      final repo = await _repo;
+      await repo.tambahAturan(widget.serviceId, aturan);
+    });
+  }
+
+  /// Tahap C — tambah pertanyaan. Opsi ditulis satu per baris dengan format
+  /// `nilai|label` karena satu pertanyaan dapat memiliki dua atau tiga opsi.
+  Future<void> _tambahPertanyaan(KnowledgeBase kb) async {
+    final urutanSaran = kb.questions.isEmpty
+        ? 10
+        : kb.questions
+                .map((q) => q.urutan)
+                .reduce((a, b) => a > b ? a : b) +
+            10;
+    final nilai = await _tanya(
+      judul: 'Pertanyaan baru · ${kb.serviceId.toUpperCase()}',
+      kolom: [
+        KolomForm(
+          kunci: 'id',
+          label: 'ID pertanyaan',
+          cek: (t) => RegExp(r'^[A-Z]+-Q\d+$').hasMatch(t)
+              ? null
+              : 'Format <LAYANAN>-Q<nn>, mis. '
+                  '${kb.serviceId.toUpperCase()}-Q99.',
+        ),
+        KolomForm(kunci: 'factKey', label: 'factKey'),
+        KolomForm(kunci: 'teks', label: 'Teks pertanyaan', maxLines: 2),
+        KolomForm(
+          kunci: 'urutan',
+          label: 'Urutan',
+          awal: '$urutanSaran',
+          angka: true,
+        ),
+        KolomForm(
+          kunci: 'opsi',
+          label: 'Opsi — satu per baris, format nilai|label',
+          awal: 'ya|Ya\ntidak|Tidak',
+          maxLines: 4,
+          cek: _cekOpsi,
+        ),
+      ],
+    );
+    if (nilai == null) return;
+
+    final pertanyaan = GuidanceQuestion(
+      id: nilai[0],
+      serviceId: widget.serviceId,
+      factKey: nilai[1],
+      teks: nilai[2],
+      urutan: int.parse(nilai[3]),
+      opsi: _uraiOpsi(nilai[4]),
+    );
+    await _simpan(() async {
+      final repo = await _repo;
+      await repo.tambahPertanyaan(widget.serviceId, pertanyaan);
+    });
+  }
+
+  Future<void> _pesan(String teks) => showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          content: Text(teks),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Mengerti'),
+            ),
+          ],
+        ),
+      );
+
+  /// Memeriksa format kolom opsi SEBELUM dialog ditutup, agar pengguna tidak
+  /// kehilangan isian yang sudah diketik.
+  String? _cekOpsi(String teks) {
+    final baris = teks
+        .split('\n')
+        .map((b) => b.trim())
+        .where((b) => b.isNotEmpty)
+        .toList();
+    if (baris.length < 2) return 'Isi minimal dua opsi.';
+    for (final b in baris) {
+      final i = b.indexOf('|');
+      if (i <= 0 || i == b.length - 1) return 'Format tiap baris: nilai|label';
+    }
+    return null;
+  }
+
+  List<AnswerOption> _uraiOpsi(String teks) => [
+        for (final b in teks.split('\n'))
+          if (b.trim().isNotEmpty)
+            AnswerOption(
+              value: b.substring(0, b.indexOf('|')).trim(),
+              label: b.substring(b.indexOf('|') + 1).trim(),
+            ),
+      ];
 
   // ------------------------------------------------------------------ build
 
@@ -285,6 +505,16 @@ class _KelolaLayananPageState extends ConsumerState<KelolaLayananPage> {
           style: theme.textTheme.bodySmall,
         ),
         const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.tonalIcon(
+            key: const Key('admin-tambah-aturan'),
+            onPressed: () => _tambahAturan(kb),
+            icon: const Icon(Icons.add),
+            label: const Text('Tambah aturan'),
+          ),
+        ),
+        const SizedBox(height: 12),
         for (final r in aturan)
           Card(
             child: ListTile(
@@ -312,10 +542,13 @@ class _KelolaLayananPageState extends ConsumerState<KelolaLayananPage> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Switch(
-                    key: Key('admin-aktif-${r.id}'),
-                    value: r.aktif,
-                    onChanged: (v) => _ubahAktifAturan(r, v),
+                  Semantics(
+                    label: 'Aktifkan aturan ${r.id}',
+                    child: Switch(
+                      key: Key('admin-aktif-${r.id}'),
+                      value: r.aktif,
+                      onChanged: (v) => _ubahAktifAturan(r, v),
+                    ),
                   ),
                   const Icon(Icons.edit_outlined, size: 18),
                 ],
@@ -339,6 +572,16 @@ class _KelolaLayananPageState extends ConsumerState<KelolaLayananPage> {
           style: theme.textTheme.bodySmall,
         ),
         const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.tonalIcon(
+            key: const Key('admin-tambah-pertanyaan'),
+            onPressed: () => _tambahPertanyaan(kb),
+            icon: const Icon(Icons.add),
+            label: const Text('Tambah pertanyaan'),
+          ),
+        ),
+        const SizedBox(height: 12),
         for (final q in pertanyaan)
           Card(
             child: ListTile(
@@ -355,10 +598,13 @@ class _KelolaLayananPageState extends ConsumerState<KelolaLayananPage> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Switch(
-                    key: Key('admin-aktif-${q.id}'),
-                    value: q.aktif,
-                    onChanged: (v) => _ubahAktifPertanyaan(q, v),
+                  Semantics(
+                    label: 'Aktifkan pertanyaan ${q.id}',
+                    child: Switch(
+                      key: Key('admin-aktif-${q.id}'),
+                      value: q.aktif,
+                      onChanged: (v) => _ubahAktifPertanyaan(q, v),
+                    ),
                   ),
                   const Icon(Icons.edit_outlined, size: 18),
                 ],
@@ -431,6 +677,9 @@ class _KelolaLayananPageState extends ConsumerState<KelolaLayananPage> {
   }
 }
 
+/// Nilai dropdown "tidak menetapkan outcome" pada form aturan.
+const String kTanpaOutcome = '(tidak menetapkan)';
+
 /// Satu kolom formulir H6.
 class KolomForm {
   final String kunci;
@@ -440,6 +689,16 @@ class KolomForm {
   final bool wajib;
   final int maxLines;
 
+  /// Bila tidak null, kolom menjadi dropdown dengan pilihan ini — dipakai agar
+  /// admin memilih fakta/outcome yang PASTI ada, bukan mengetiknya.
+  final List<String>? pilihan;
+
+  /// Bila true, kolom menjadi saklar; nilainya dikembalikan "true"/"false".
+  final bool saklar;
+
+  /// Pemeriksaan tambahan per kolom; mengembalikan pesan galat atau null.
+  final String? Function(String teks)? cek;
+
   const KolomForm({
     required this.kunci,
     required this.label,
@@ -447,6 +706,9 @@ class KolomForm {
     this.angka = false,
     this.wajib = true,
     this.maxLines = 1,
+    this.pilihan,
+    this.saklar = false,
+    this.cek,
   });
 }
 
@@ -471,6 +733,9 @@ class _DialogFormState extends State<DialogForm> {
     for (final k in widget.kolom) TextEditingController(text: k.awal),
   ];
 
+  /// Nilai kolom non-teks (dropdown/saklar); kolom teks dibaca dari kendali.
+  late final List<String> _nilai = [for (final k in widget.kolom) k.awal];
+
   @override
   void dispose() {
     for (final c in _kendali) {
@@ -487,7 +752,54 @@ class _DialogFormState extends State<DialogForm> {
       return null;
     }
     if (kolom.wajib && teks.isEmpty) return 'Tidak boleh kosong.';
+    if (kolom.cek != null) return kolom.cek!(teks);
     return null;
+  }
+
+  List<String> _hasil() => [
+        for (var i = 0; i < widget.kolom.length; i++)
+          if (widget.kolom[i].saklar || widget.kolom[i].pilihan != null)
+            _nilai[i]
+          else
+            _kendali[i].text.trim(),
+      ];
+
+  Widget _kolomWidget(int i) {
+    final k = widget.kolom[i];
+    if (k.saklar) {
+      return SwitchListTile(
+        key: Key('admin-input-${k.kunci}'),
+        contentPadding: EdgeInsets.zero,
+        title: Text(k.label),
+        value: _nilai[i] == 'true',
+        onChanged: (v) => setState(() => _nilai[i] = '$v'),
+      );
+    }
+    if (k.pilihan != null) {
+      final pilihan = k.pilihan!;
+      final awal =
+          pilihan.contains(_nilai[i]) ? _nilai[i] : pilihan.first;
+      _nilai[i] = awal;
+      return DropdownButtonFormField<String>(
+        key: Key('admin-input-${k.kunci}'),
+        initialValue: awal,
+        decoration: InputDecoration(labelText: k.label),
+        items: [
+          for (final p in pilihan)
+            DropdownMenuItem(value: p, child: Text(p)),
+        ],
+        onChanged: (v) => setState(() => _nilai[i] = v ?? _nilai[i]),
+      );
+    }
+    return TextFormField(
+      key: Key('admin-input-${k.kunci}'),
+      controller: _kendali[i],
+      autofocus: i == 0,
+      maxLines: k.maxLines,
+      keyboardType: k.angka ? TextInputType.number : null,
+      decoration: InputDecoration(labelText: k.label),
+      validator: (v) => _validasi(k, v),
+    );
   }
 
   @override
@@ -496,25 +808,16 @@ class _DialogFormState extends State<DialogForm> {
       title: Text(widget.judul),
       content: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var i = 0; i < widget.kolom.length; i++) ...[
-              if (i > 0) const SizedBox(height: 12),
-              TextFormField(
-                key: Key('admin-input-${widget.kolom[i].kunci}'),
-                controller: _kendali[i],
-                autofocus: i == 0,
-                maxLines: widget.kolom[i].maxLines,
-                keyboardType:
-                    widget.kolom[i].angka ? TextInputType.number : null,
-                decoration: InputDecoration(
-                  labelText: widget.kolom[i].label,
-                ),
-                validator: (v) => _validasi(widget.kolom[i], v),
-              ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 0; i < widget.kolom.length; i++) ...[
+                if (i > 0) const SizedBox(height: 12),
+                _kolomWidget(i),
+              ],
             ],
-          ],
+          ),
         ),
       ),
       actions: [
@@ -526,9 +829,7 @@ class _DialogFormState extends State<DialogForm> {
           key: const Key('admin-dialog-simpan'),
           onPressed: () {
             if (_formKey.currentState?.validate() ?? false) {
-              Navigator.of(context).pop(
-                [for (final c in _kendali) c.text.trim()],
-              );
+              Navigator.of(context).pop(_hasil());
             }
           },
           child: const Text('Simpan'),

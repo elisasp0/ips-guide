@@ -39,6 +39,22 @@ abstract class KnowledgeBaseRepository {
 
   /// Simpan perubahan nama/keterangan satu persyaratan dari H6 (S28).
   Future<void> simpanPersyaratan(Requirement persyaratan);
+
+  /// Tambah aturan baru dari form H6 (§12.3 tahap C).
+  ///
+  /// Ditolak bila ID aturan sudah dipakai pada layanan itu, atau bila basis
+  /// pengetahuan gabungan melanggar aturan validasi — dalam hal itu basis
+  /// pengetahuan lama tetap utuh (§12.5).
+  Future<void> tambahAturan(String serviceId, Rule aturan);
+
+  /// Tambah pertanyaan baru dari form H6 (§12.3 tahap C).
+  ///
+  /// Ditolak bila ID pertanyaan atau `factKey` sudah dipakai pada layanan itu
+  /// (§10.4.1 poin 6), atau bila validasi gabungan gagal.
+  Future<void> tambahPertanyaan(
+    String serviceId,
+    GuidanceQuestion pertanyaan,
+  );
 }
 
 /// Galat pemuatan/pencarian basis pengetahuan (S20, S38, S45).

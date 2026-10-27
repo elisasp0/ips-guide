@@ -20,7 +20,9 @@ import 'knowledge_base_repository.dart';
 ///
 /// Sejak Tahap 7 repository ini juga melayani operasi tulis H6 dengan
 /// prosedur §12.5: bangun basis pengetahuan gabungan → validasi → tulis,
-/// dan **kembalikan keadaan lama** bila validasi gagal (S44).
+/// dan **kembalikan keadaan lama** bila validasi gagal (S44). Tahap C
+/// (tambah aturan/pertanyaan) memakai prosedur yang sama, sehingga basis
+/// pengetahuan dapat diperluas tanpa mengubah kode.
 class InMemoryKnowledgeBaseRepository implements KnowledgeBaseRepository {
   final Map<String, GuidanceService> _services;
   final Map<String, List<GuidanceQuestion>> _questions;
@@ -194,6 +196,71 @@ class InMemoryKnowledgeBaseRepository implements KnowledgeBaseRepository {
     }
     for (final id in _services.keys) {
       _validasiDanSimpan(id);
+    }
+  }
+
+  @override
+  Future<void> tambahAturan(String serviceId, Rule aturan) async {
+    final daftar = _rules[serviceId];
+    if (daftar == null) {
+      throw KnowledgeBaseException('serviceId tidak dikenal: $serviceId');
+    }
+    if (aturan.serviceId != serviceId) {
+      throw KnowledgeBaseException(
+        'Aturan ${aturan.id} milik ${aturan.serviceId}, bukan $serviceId',
+      );
+    }
+    if (daftar.any((r) => r.id == aturan.id)) {
+      throw KnowledgeBaseException(
+        'Aturan ${aturan.id} sudah ada pada layanan $serviceId',
+      );
+    }
+    daftar.add(aturan);
+    try {
+      _validasiKandidat(serviceId, 'Aturan ${aturan.id} ditolak');
+      _validasiDanSimpan(serviceId);
+    } catch (_) {
+      daftar.removeLast(); // Basis pengetahuan lama tetap utuh (§12.5).
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> tambahPertanyaan(
+    String serviceId,
+    GuidanceQuestion pertanyaan,
+  ) async {
+    final daftar = _questions[serviceId];
+    if (daftar == null) {
+      throw KnowledgeBaseException('serviceId tidak dikenal: $serviceId');
+    }
+    if (pertanyaan.serviceId != serviceId) {
+      throw KnowledgeBaseException(
+        'Pertanyaan ${pertanyaan.id} milik ${pertanyaan.serviceId}, '
+        'bukan $serviceId',
+      );
+    }
+    if (daftar.any((q) => q.id == pertanyaan.id)) {
+      throw KnowledgeBaseException(
+        'Pertanyaan ${pertanyaan.id} sudah ada pada layanan $serviceId',
+      );
+    }
+    if (daftar.any((q) => q.factKey == pertanyaan.factKey)) {
+      throw KnowledgeBaseException(
+        'factKey ${pertanyaan.factKey} sudah dipakai pertanyaan lain pada '
+        'layanan $serviceId (§10.4.1)',
+      );
+    }
+    daftar.add(pertanyaan);
+    try {
+      _validasiKandidat(
+        serviceId,
+        'Pertanyaan ${pertanyaan.id} ditolak',
+      );
+      _validasiDanSimpan(serviceId);
+    } catch (_) {
+      daftar.removeLast();
+      rethrow;
     }
   }
 
