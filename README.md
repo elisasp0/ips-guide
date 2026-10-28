@@ -40,6 +40,34 @@ Login · Beranda · Pilih Layanan · Pertanyaan Panduan · Hasil Panduan · Kelo
 Ketiga komponen di tabel kedua adalah rencana yang sudah disiapkan kontraknya (antarmuka
 repository), bukan fitur yang berjalan. Tidak ada berkas konfigurasi Firebase di repositori ini.
 
+## Rencana Database
+
+**Penyimpanan saat ini masih in-memory.** Formulir **Sampaikan Kebutuhan** (H7) menyimpan kiriman
+warga lewat `InMemoryKebutuhanRepository` — data hanya bertahan selama halaman belum dimuat ulang,
+lalu hilang. Firebase **belum terintegrasi**: `pubspec.yaml` tidak memuat satu pun paket Firebase,
+tidak ada `firebase_options.dart`, dan tidak ada `firestore.rules` di repositori ini.
+
+Rencana pasca-UTS: kiriman H7 dipindahkan ke koleksi Cloud Firestore **`kebutuhanWarga`**.
+
+| Field | Tipe | Sumber nilai | Keterangan |
+| --- | --- | --- | --- |
+| `uid` | string | `request.auth.uid` | **Belum ada di kode.** Pemilik kiriman; dasar aturan baca |
+| `namaPemohon` | string | isian form | 3–60 karakter, tanpa angka |
+| `serviceId` | string | dropdown | `ktp` / `kk` / `domisili` |
+| `serviceNama` | string | turunan | Nama layanan dibekukan agar riwayat tidak berubah |
+| `pesan` | string | isian form | 10–300 karakter |
+| `status` | string | default `'baru'` | **Belum ada di kode.** `baru` → `dibaca` → `selesai` |
+| `dibuatPada` | timestamp | `serverTimestamp()` | Waktu server, bukan jam perangkat |
+| `dibacaPada` | timestamp | admin | **Belum ada di kode.** Opsional |
+| `catatanPetugas` | string | admin | **Belum ada di kode.** Opsional; keputusan ruang lingkup |
+
+ID dokumen memakai **auto-id** Firestore, bukan nomor urut `KB-001` seperti di repository in-memory —
+nomor urut akan bertabrakan begitu dua perangkat menulis ke koleksi yang sama.
+
+Rancangan lengkap (contoh dokumen, aturan keamanan, dan daftar berkas yang harus berubah) ada di
+[`docs/RANCANGAN-ARSITEKTUR.md` §8.7](docs/RANCANGAN-ARSITEKTUR.md). Isinya **rancangan**, bukan
+laporan implementasi.
+
 ## Struktur
 
 - `lib/app/` — bootstrap, tema (style guide §13), routing

@@ -5,9 +5,9 @@ Panduan Layanan Administrasi Kelurahan Tegalsari, Kota Semarang
 
 | Item | Nilai |
 |---|---|
-| Versi dokumen | **1.4** (pemeriksaan akhir: invarian terminal & validasi tahapan) |
-| Versi sebelumnya | 1.3 (review lanjutan) · 1.2 (perbaikan mesin aturan) · 1.1 (integrasi Firebase) · 1.0 (awal) |
-| Tanggal | 26 Oktober 2026 |
+| Versi dokumen | **1.5** (rencana database untuk data form H7) |
+| Versi sebelumnya | 1.4 (pemeriksaan akhir: invarian terminal & validasi tahapan) · 1.3 (review lanjutan) · 1.2 (perbaikan mesin aturan) · 1.1 (integrasi Firebase) · 1.0 (awal) |
+| Tanggal | 28 Oktober 2026 |
 | Mahasiswa | Elisa Sandita Putri / 23.01.55.0010 / Kelas A1 |
 | Teknologi | Flutter 3.47.7 · Dart 3.13.5 · **Firebase Authentication · Cloud Firestore · Firebase Hosting (direncanakan — belum terintegrasi)** |
 | Target platform | Flutter Web (Chrome) sebagai prioritas; mobile ikut karena satu basis kode |
@@ -92,6 +92,20 @@ Pemeriksaan difokuskan pada dua hal saja: kebenaran interaksi terminal–outcome
 
 **Sifat perubahan v1.4:** minimal dan aditif. Tidak ada mekanisme v1.3 yang dibatalkan. Yang ditambahkan hanyalah **pemeriksaan** (agar konfigurasi bertentangan ditolak lebih awal) dan **penanda** (agar asumsi tidak terbaca sebagai ketentuan resmi).
 
+### 0.6 Temuan audit rencana teknis UTS (dasar perubahan ke v1.5)
+
+Audit dilakukan terhadap luaran Minggu 7 dan modulnya. Butir UTS yang relevan berbunyi: *"Rencana teknis — Tech stack dan rencana database: koleksi dan field dari data form hari ini."* Dokumen v1.4 belum menjawabnya untuk H7.
+
+| # | Temuan | Bukti | Perbaikan | Bagian |
+|---|---|---|---|---|
+| **W-01** | Tidak ada koleksi untuk data form H7 | §8.1 hanya memuat 7 koleksi (`services`, `questions`, `rules`, `requirements`, `steps`, `users`, `guidanceLogs`) — semuanya basis pengetahuan dan akun | Koleksi `kebutuhanWarga` beserta tabel field, contoh dokumen, dan rancangan aturan keamanan | §8.1, §8.7 |
+| **W-02** | Entity `KebutuhanWarga` tidak tercatat | Berkas `lib/domain/entities/kebutuhan_warga.dart` sudah ada sejak commit `0e9b9c2`, tetapi §7 tidak memuatnya | Entity ditambahkan + tabel yang memisahkan field **ada** dan field **belum** | §7 |
+| **W-03** | Daftar halaman berhenti di H6 | Judul §5 berbunyi "(H1–H6)" dan tabelnya berakhir di H6, padahal header menyatakan 7 halaman | Judul menjadi (H1–H7); baris H7 ditambahkan beserta dua keadaan alternatifnya | §5, §5.1 |
+| **W-04** | Struktur folder dan pola repository tidak mencakup H7 | §4 tidak memuat `features/kebutuhan/` maupun tiga berkas repository; §3.3 hanya mendokumentasikan `KnowledgeBaseRepository` | Kedua bagian diperbarui, termasuk penanda `[ada]` / `[rencana]` | §3.3, §4 |
+| **W-05** | Pemetaan komponen sistem pakar hanya menyebut H1–H6 | §2 baris "User Interface" berbunyi H1–H6 | Menjadi H1–H7 + baris "Kanal masukan warga" | §2 |
+
+**Sifat perubahan v1.5:** aditif dan **hanya dokumentasi**. Tidak ada kode Dart, berkas uji, konfigurasi Firebase, maupun video yang diubah. Seluruh isi §8.7 berstatus **rancangan** — tidak ada satu pun yang boleh disebut sudah berjalan.
+
 ---
 
 ## 1. Ringkasan & Ruang Lingkup
@@ -106,6 +120,7 @@ IPS-Guide memandu warga memilih layanan, menjawab pertanyaan bertahap, lalu mene
 - Menampilkan persyaratan dokumen, tahapan pelayanan, catatan, dan status kelayakan.
 - Menjelaskan aturan mana yang menyebabkan suatu dokumen diminta (*explanation facility*).
 - Menyediakan halaman admin untuk mengelola data panduan (CRUD).
+- Menerima pertanyaan atau kebutuhan warga lewat form **Sampaikan Kebutuhan (H7)** — nama, jenis layanan, dan pesan bebas. Pada prototipe ini kiriman hanya bertahan selama sesi (§8.7).
 
 ### 1.2 Batasan ruang lingkup skripsi
 - Hanya media panduan. **Tidak** menerbitkan dokumen resmi.
@@ -155,9 +170,10 @@ Email dan nama **adalah data pribadi** dan diperlakukan sebagai data pribadi: ha
 | **Inference Engine** | *Forward chaining* + resolusi konflik, pure Dart | `lib/domain/engine/` |
 | **Working Memory** | `FactBase` — fakta jawaban + fakta turunan, hanya di memori sesi | `lib/domain/engine/fact_base.dart` |
 | **Explanation Facility** | `sourceRuleId` pada setiap persyaratan; sheet "Mengapa dokumen ini diminta?" | `lib/features/result/` |
-| **User Interface** | H1–H6 | `lib/features/` |
+| **User Interface** | H1–H7 | `lib/features/` |
 | **Knowledge Acquisition** | H6 Kelola Panduan (Admin) — CRUD ke Firestore | `lib/features/admin/` |
 | **Penyimpanan pengguna** | Firebase Authentication + koleksi `users` | Firebase |
+| **Kanal masukan warga** | H7 Sampaikan Kebutuhan — pesan bebas ke petugas (bukan basis pengetahuan) | `lib/features/kebutuhan/` |
 
 ---
 
@@ -188,7 +204,11 @@ Aturan yang tidak boleh dilanggar:
 | `data/` | Repository + DTO + pemetaan | `FirestoreKnowledgeBaseRepository` |
 | `features/` | Satu folder per halaman | `auth/`, `home/`, `services/`, `guidance/`, `result/`, `admin/` |
 
-### 3.3 Dua implementasi repository
+### 3.3 Pola repository: dua implementasi per antarmuka
+
+Pola ini dipakai **dua kali**, bukan sekali. Keduanya bekerja dengan cara yang sama: UI hanya bergantung pada antarmuka abstrak, sehingga penggantian sumber data tidak menyentuh satu baris pun kode tampilan.
+
+**a. Basis pengetahuan (H3–H6)**
 
 ```dart
 abstract class KnowledgeBaseRepository {
@@ -199,10 +219,29 @@ abstract class KnowledgeBaseRepository {
 
 | Implementasi | Kapan dipakai | Untuk apa |
 |---|---|---|
-| `InMemoryKnowledgeBaseRepository` | Tahap 2–4 | Membaca `assets/seed/` agar **UI dan engine bisa dibangun & diuji sebelum Firebase ada** |
-| `FirestoreKnowledgeBaseRepository` | Tahap 6 dan seterusnya | Sumber data resmi aplikasi |
+| `InMemoryKnowledgeBaseRepository` | Tahap 2–4 (**berjalan sekarang**) | Membaca `assets/seed/` agar **UI dan engine bisa dibangun & diuji sebelum Firebase ada** |
+| `FirestoreKnowledgeBaseRepository` | Tahap 6 (**belum ada**) | Sumber data resmi aplikasi |
 
-Keduanya memenuhi antarmuka yang sama, sehingga **UI tidak berubah** saat sumber data berganti.
+**b. Kebutuhan warga (H7)**
+
+```dart
+abstract class KebutuhanRepository {
+  Future<List<KebutuhanWarga>> daftar();   // terbaru lebih dulu
+  Future<KebutuhanWarga> kirim({
+    required String namaPemohon,
+    required String serviceId,
+    required String serviceNama,
+    required String pesan,
+  });
+}
+```
+
+| Implementasi | Kapan dipakai | Untuk apa |
+|---|---|---|
+| `InMemoryKebutuhanRepository` | **Berjalan sekarang** | Menyimpan kiriman warga di `List` selama aplikasi hidup; data hilang saat halaman dimuat ulang (disengaja, Modul Minggu 7 §5) |
+| `FirestoreKebutuhanRepository` | Pasca-UTS (**belum ada**) | Menyimpan permanen ke koleksi `kebutuhanWarga` (§8.7) |
+
+Keduanya memenuhi antarmuka yang sama, sehingga **UI tidak berubah** saat sumber data berganti. Perhatikan konsekuensinya: kontrak `kirim()` **belum** memuat `uid`, `status`, maupun `catatanPetugas` — bila field itu ditambahkan nanti (§8.7), tanda tangan metode ini ikut berubah, dan itu perubahan yang disadari, bukan kebetulan.
 
 > **Yang sengaja tidak dibuat:** cache offline kustom, sinkronisasi dua arah, antrean tulis luring, atau logika "pakai Firestore, kalau gagal pakai JSON". Bila Firestore gagal dimuat, aplikasi menampilkan keadaan **"layanan belum tersedia"**.
 
@@ -253,11 +292,14 @@ Di luar shell:
 
 ## 4. Struktur Folder
 
+Tanda `[ada]` = berkas sudah ada di repositori. Tanda `[rencana]` = belum dibuat; dicantumkan supaya
+tempatnya sudah ditetapkan sebelum Tahap 5b/6 dikerjakan.
+
 ```
 ips_guide/
 ├── lib/
 │   ├── main.dart
-│   ├── firebase_options.dart
+│   ├── firebase_options.dart                        [rencana] Tahap 5b
 │   ├── app/{app,router,theme}.dart
 │   ├── core/
 │   │   ├── constants/{app_strings,app_colors}.dart
@@ -276,7 +318,8 @@ ips_guide/
 │   │   │   ├── guidance_note.dart
 │   │   │   ├── guidance_result.dart
 │   │   │   ├── knowledge_base.dart
-│   │   │   └── app_user.dart
+│   │   │   ├── app_user.dart
+│   │   │   └── kebutuhan_warga.dart                 [ada] H7 (§7)
 │   │   └── engine/
 │   │       ├── fact_base.dart
 │   │       ├── condition_evaluator.dart
@@ -285,11 +328,15 @@ ips_guide/
 │   │       └── guidance_session.dart     # jawaban + recompute
 │   ├── data/
 │   │   ├── models/                       # DTO + mapper
+│   │   │   └── kebutuhan_warga_mapper.dart                   [rencana] pasca-UTS
 │   │   ├── repositories/
 │   │   │   ├── knowledge_base_repository.dart
 │   │   │   ├── in_memory_knowledge_base_repository.dart
-│   │   │   ├── firestore_knowledge_base_repository.dart
-│   │   │   └── auth_repository.dart
+│   │   │   ├── firestore_knowledge_base_repository.dart      [rencana] Tahap 6
+│   │   │   ├── auth_repository.dart
+│   │   │   ├── kebutuhan_repository.dart                     [ada] H7
+│   │   │   ├── in_memory_kebutuhan_repository.dart           [ada] H7
+│   │   │   └── firestore_kebutuhan_repository.dart           [rencana] pasca-UTS (§8.7)
 │   │   └── seed/seed_loader.dart
 │   └── features/
 │       ├── auth/{application,presentation}
@@ -297,22 +344,29 @@ ips_guide/
 │       ├── services/presentation/service_list_page.dart
 │       ├── guidance/{application,presentation}
 │       ├── result/{application,presentation}
-│       └── admin/presentation/admin_page.dart
+│       ├── admin/presentation/admin_page.dart
+│       └── kebutuhan/presentation/kebutuhan_page.dart         [ada] H7
 ├── assets/seed/{services,questions,requirements,steps}.json
 ├── assets/seed/rules/{ktp,kk,domisili}.json
 ├── test/
-│   ├── domain/engine/{condition_evaluator,rule_engine,question_selector}_test.dart
-│   ├── data/knowledge_base_mapping_test.dart
+│   ├── domain/engine/{condition_evaluator,rule_engine,question_selector,
+│   │                   knowledge_base_validator,guidance_session}_test.dart
+│   ├── data/{knowledge_base_mapping,kebutuhan_repository}_test.dart
 │   ├── scenario/scenario_test.dart
-│   └── widget/{login_flow,guidance_flow,result_flow}_test.dart
-├── firestore.rules
-├── firebase.json
+│   ├── auth/auth_flow_test.dart
+│   ├── admin/{admin_page,admin_repository}_test.dart
+│   ├── widget/{guidance_flow,alternative_states,navigation,responsive,
+│   │           kebutuhan_form}_test.dart
+│   ├── support/{knowledge_base_fixture,widget_utils}.dart
+│   └── widget_test.dart                  # asap: Beranda tampil setelah masuk
+├── firestore.rules                                  [rencana] Tahap 6
+├── firebase.json                                    [rencana] Tahap 6
 └── docs/RANCANGAN-ARSITEKTUR.md
 ```
 
 ---
 
-## 5. Daftar Halaman (H1–H6)
+## 5. Daftar Halaman (H1–H7)
 
 | Kode | Nama halaman | Rute | Tujuan | Prioritas |
 |---|---|---|---|---|
@@ -322,8 +376,11 @@ ips_guide/
 | H4 | **Pertanyaan Panduan** | `/panduan/:serviceId` | Pertanyaan bertahap; validasi kelengkapan | Must |
 | H5 | **Hasil Panduan** | `/hasil` | Persyaratan, tahapan, catatan; atau "panduan belum tersedia" | Must |
 | H6 | **Kelola Panduan (Admin)** | `/admin` | CRUD data layanan, pertanyaan, aturan, persyaratan, tahapan | Should |
+| H7 | **Sampaikan Kebutuhan** | `/kebutuhan` | Form warga (nama, jenis layanan, pesan) + daftar kiriman selama sesi | Must (luaran Minggu 7) |
 
 Nama halaman dipakai identik di flow, sitemap, menu, judul AppBar, dan nama frame Figma. "Pertanyaan Interaktif" (Minggu 4) dibakukan menjadi **Pertanyaan Panduan**.
+
+**Catatan tentang H7.** Halaman ini **tidak ada** di sitemap Minggu 3 — sitemap itu berhenti di Hasil Panduan. H7 lahir dari luaran Minggu 7 ("satu form yang dapat diuji"), jadi ia berada di luar alur panduan: bukan langkah wajib warga, melainkan kanal bila pertanyaannya belum terjawab. Datanya juga **bukan** basis pengetahuan — lihat §8.7.
 
 ### 5.1 Keadaan alternatif wajib
 
@@ -333,6 +390,8 @@ Nama halaman dipakai identik di flow, sitemap, menu, judul AppBar, dan nama fram
 | H3 Pilih Layanan | **Layanan belum tersedia** | Firestore kosong/gagal, atau `service.aktif == false` |
 | H4 Pertanyaan Panduan | **Galat jawaban belum lengkap** | "Lihat Panduan" ditekan sebelum semua pertanyaan terjawab |
 | H5 Hasil Panduan | **Panduan belum tersedia** | Tidak ada aturan yang menetapkan outcome (`outcome == null`) |
+| H7 Sampaikan Kebutuhan | **Belum ada kebutuhan terkirim** | Daftar kosong — sebelum kiriman pertama atau setelah halaman dimuat ulang |
+| H7 Sampaikan Kebutuhan | **Gagal menyimpan** | Repository melempar galat, atau layanan yang dipilih tidak dikenal |
 
 ---
 
@@ -400,9 +459,30 @@ class GuidanceResult {
   final List<RuleTrace> trace;
   final bool terminal;
 }
+
+class KebutuhanWarga {                // H7 — ADA di lib/domain/entities/kebutuhan_warga.dart
+  final String id, namaPemohon, serviceId, serviceNama, pesan;
+  final DateTime dibuatPada;
+}
 ```
 
 Semua entity immutable. `Map<String, dynamic>` hanya hidup di `data/models/`.
+
+**`KebutuhanWarga` — apa yang ada sekarang, apa yang belum.** Entity ini **bukan** data panduan dan **bukan** data kependudukan; ia hanya menampung kiriman warga dari H7.
+
+| Field | Ada di kode? | Sumber nilai |
+|---|---|---|
+| `id` | ya | dibuat repository: `KB-001`, `KB-002`, … (sekuensial per instance) |
+| `namaPemohon` | ya | isian warga (3–60 karakter, tanpa angka) |
+| `serviceId` | ya | pilihan dropdown, berasal dari `GuidanceService.id` |
+| `serviceNama` | ya | turunan dari layanan terpilih (disimpan agar daftar bisa menampilkan nama) |
+| `pesan` | ya | isian warga (minimal 10 karakter, `maxLength` 300 di widget) |
+| `dibuatPada` | ya | `DateTime.now()` di perangkat |
+| `uid` | **belum** | rencana: `request.auth.uid` (§8.7) |
+| `status` | **belum** | rencana: `baru` / `dibaca` / `selesai` (§8.7) |
+| `dibacaPada`, `catatanPetugas` | **belum** | rencana, opsional (§8.7) |
+
+Konsekuensi yang harus dinyatakan terbuka: **tanpa `uid`**, aplikasi saat ini tidak dapat membatasi daftar kiriman pada pemiliknya — semua yang membuka H7 melihat seluruh isi daftar selama sesi berjalan. Itu dapat diterima pada prototipe satu-perangkat, tetapi **tidak** dapat dipertahankan setelah data berpindah ke Firestore.
 
 ---
 
@@ -419,6 +499,11 @@ Semua entity immutable. `Map<String, dynamic>` hanya hidup di `data/models/`.
 | `steps` | `STEP_LOKET`, … | Katalog tahapan + `aktif` | Warga, Admin | Admin |
 | `users` | `{uid}` | Email, nama, peran | Pemilik + Admin | Pemilik (terbatas) / Admin |
 | `guidanceLogs` | auto-id | `uid`, `serviceId`, `outcome`, `createdAt` — **tanpa peta jawaban** | Pemilik + Admin | Pemilik (create) |
+| `kebutuhanWarga` | auto-id | **Rencana.** Kiriman form H7: `uid`, nama pemohon, layanan, pesan, status, waktu | Pemilik + Admin | Warga (create) / Admin (update) |
+
+> **Baris terakhir belum ada.** Enam koleksi pertama adalah rancangan untuk basis pengetahuan dan akun.
+> `kebutuhanWarga` ditambahkan pada v1.5 untuk menjawab luaran Minggu 7 — **belum dibuat di Firebase
+> dan belum dipakai kode mana pun**. Rinciannya di §8.7.
 
 ### 8.2 Contoh dokumen
 
@@ -556,6 +641,8 @@ firestore.collection('guidanceLogs').get();
 
 **Belum diuji.** Aturan keamanan di atas baru berupa rancangan. Pengujian dengan Emulator Suite bersifat opsional dan **belum dijalankan**; tidak ada satu pun kasus di bawah ini yang boleh disebut "lulus" sampai benar-benar dieksekusi.
 
+**Koleksi `kebutuhanWarga` (§8.7) belum masuk blok di atas.** Aturannya masih rancangan dan sengaja diletakkan di §8.7 agar tidak terbaca sebagai bagian dari `firestore.rules` yang sudah ada. Lagi pula berkas `firestore.rules` itu sendiri belum dibuat (Tahap 6).
+
 ### 8.5 Tiga lapis pengamanan (dibedakan pada v1.3 — U-05)
 
 Klaim "warga tidak dapat membuka H6" **bukan** jaminan keamanan. Ia hanya kenyamanan antarmuka. Yang benar-benar melindungi data adalah aturan Firestore.
@@ -594,6 +681,103 @@ Aturan seed yang wajib dipatuhi:
 - Tulis dengan `WriteBatch`, maksimal 500 operasi per batch (batas Firestore).
 - Seed bersifat **idempotent**: memakai `set(..., SetOptions(merge: false))` dengan ID tetap, sehingga menjalankan ulang menimpa, bukan menduplikasi.
 - Tidak ada pembacaan `assets/` saat runtime normal; tidak ada fallback otomatis.
+
+### 8.7 Koleksi `kebutuhanWarga` (rencana — belum dipasang)
+
+> **Status: rancangan, bukan implementasi.** Koleksi ini **belum ada** di Firebase, belum ada
+> `firestore.rules` di repositori, dan belum ada satu baris kode yang menulis ke sana. Saat ini H7
+> menyimpan kiriman warga di `InMemoryKebutuhanRepository` — data hilang saat halaman dimuat ulang.
+> Bagian ini disusun untuk menjawab luaran Minggu 7 ("koleksi dan field dari data form hari ini"),
+> bukan untuk mengklaim bahwa penyimpanan permanen sudah berjalan.
+
+#### a. Field
+
+| Field | Tipe Firestore | Wajib | Sumber nilai | Keterangan |
+|---|---|---|---|---|
+| `uid` | `string` | ya | `request.auth.uid` | Pemilik kiriman; dasar aturan baca dan penindaklanjutan oleh petugas |
+| `namaPemohon` | `string` | ya | isian form (teks) | 3–60 karakter, tanpa angka |
+| `serviceId` | `string` | ya | dropdown | Salah satu `ktp` / `kk` / `domisili`; divalidasi aturan keamanan |
+| `serviceNama` | `string` | ya | turunan dari layanan terpilih | **Denormalisasi**: nama layanan dibekukan agar riwayat tidak berubah ketika layanan diganti nama |
+| `pesan` | `string` | ya | isian form (multiline) | 10–300 karakter |
+| `status` | `string` | ya | default `'baru'` | `baru` → `dibaca` → `selesai`. Hanya admin yang boleh mengubah |
+| `dibuatPada` | `timestamp` | ya | `serverTimestamp()` | Waktu server, bukan jam perangkat — jam ponsel warga tidak dapat dipercaya |
+| `dibacaPada` | `timestamp` | tidak | admin | Diisi saat status berubah dari `baru` |
+| `catatanPetugas` | `string` | tidak | admin | **Keputusan ruang lingkup**: bila diisi, form berubah menjadi dua arah. Bila tidak, hapus field ini dan nyatakan alasannya |
+
+**ID dokumen: auto-id, bukan `KB-001`.** ID sekuensial di kode sekarang hanya aman karena penyimpanannya satu instance di satu perangkat. Begitu dua perangkat menulis ke koleksi yang sama, `KB-001` akan bertabrakan. Karena itu nomor urut **tidak** dipindahkan ke Firestore.
+
+**Yang sengaja tidak disimpan:** NIK, nomor KK, alamat, tanggal lahir, salinan dokumen, dan peta jawaban kuesioner. Sama seperti §1.4 — H7 hanya menampung nama, layanan, dan pesan bebas.
+
+#### b. Contoh dokumen
+
+`kebutuhanWarga/{auto-id}`
+
+```json
+{
+  "uid": "u7Xk2mQ9fLbW1sT4nR8pZ6cH3vA0",
+  "namaPemohon": "Budi Santoso",
+  "serviceId": "kk",
+  "serviceNama": "Kartu Keluarga",
+  "pesan": "Saya perlu memperbarui alamat pada KK karena baru pindah rumah.",
+  "status": "baru",
+  "dibuatPada": "<serverTimestamp>",
+  "dibacaPada": null,
+  "catatanPetugas": null
+}
+```
+
+#### c. Rancangan aturan keamanan
+
+Ditambahkan ke blok aturan §8.4 bila koleksi ini benar-benar dipasang:
+
+```javascript
+match /kebutuhanWarga/{id} {
+  // Warga hanya boleh membuat kiriman atas namanya sendiri, selalu berstatus 'baru',
+  // dengan panjang teks yang sama seperti validasi form — pertahanan lapis kedua.
+  allow create: if signedIn()
+                && request.resource.data.uid == request.auth.uid
+                && request.resource.data.status == 'baru'
+                && request.resource.data.serviceId in ['ktp', 'kk', 'domisili']
+                && request.resource.data.namaPemohon.size() >= 3
+                && request.resource.data.namaPemohon.size() <= 60
+                && request.resource.data.pesan.size() >= 10
+                && request.resource.data.pesan.size() <= 300;
+
+  // Warga membaca kirimannya sendiri; admin membaca semua.
+  allow read:   if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+
+  // Hanya petugas yang boleh mengubah status dan catatan.
+  allow update: if isAdmin();
+
+  // Konsisten dengan U-06: data tidak dihapus permanen.
+  allow delete: if false;
+}
+```
+
+**Konsekuensi query (sama seperti catatan T-08 pada `guidanceLogs`).** Karena `read` mengacu `resource.data.uid`, operasi daftar oleh warga **wajib** memakai filter yang sama:
+
+```dart
+// BENAR
+firestore.collection('kebutuhanWarga').where('uid', isEqualTo: uid).get();
+
+// SALAH — ditolak permission-denied, bukan mengembalikan daftar kosong
+firestore.collection('kebutuhanWarga').get();
+```
+
+Admin tidak terkena batasan ini karena `isAdmin()` membuka seluruh koleksi.
+
+#### d. Yang harus berubah di kode bila koleksi ini dipakai
+
+Dicatat supaya tidak ada kejutan: memasang koleksi ini **bukan** pekerjaan satu berkas.
+
+| Berkas | Perubahan |
+|---|---|
+| `lib/domain/entities/kebutuhan_warga.dart` | Tambah `uid`, `status`; `id` menjadi ID dokumen Firestore |
+| `lib/data/repositories/kebutuhan_repository.dart` | Tanda tangan `kirim()` bertambah `uid`; tambah metode ubah status |
+| `lib/data/models/kebutuhan_warga_mapper.dart` | **Berkas baru** — `Map` ⇄ entity, termasuk konversi `Timestamp` ⇄ `DateTime` |
+| `lib/data/repositories/firestore_kebutuhan_repository.dart` | **Berkas baru** — implementasi antarmuka yang sama |
+| `lib/data/providers.dart` | Ganti penyedia ke implementasi Firestore |
+| `lib/features/kebutuhan/presentation/kebutuhan_page.dart` | Tampilkan status; daftar difilter per `uid` |
 
 ---
 
