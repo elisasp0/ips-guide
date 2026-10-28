@@ -9,10 +9,10 @@ Panduan Layanan Administrasi Kelurahan Tegalsari, Kota Semarang
 | Versi sebelumnya | 1.3 (review lanjutan) · 1.2 (perbaikan mesin aturan) · 1.1 (integrasi Firebase) · 1.0 (awal) |
 | Tanggal | 26 Oktober 2026 |
 | Mahasiswa | Elisa Sandita Putri / 23.01.55.0010 / Kelas A1 |
-| Teknologi | Flutter 3.47.7 · Dart 3.13.5 · Firebase Authentication · Cloud Firestore · Firebase Hosting |
+| Teknologi | Flutter 3.47.7 · Dart 3.13.5 · **Firebase Authentication · Cloud Firestore · Firebase Hosting (direncanakan — belum terintegrasi)** |
 | Target platform | Flutter Web (Chrome) sebagai prioritas; mobile ikut karena satu basis kode |
-| Jumlah halaman | 6 (H1–H6) sesuai sitemap Minggu 3 |
-| Status implementasi | **Belum ada kode aplikasi.** Proyek masih scaffold Flutter bawaan (counter app). Tidak ada fitur yang berjalan, belum ada proyek Firebase, belum ada berkas uji. **Belum ada satu pun pengujian yang dijalankan.** |
+| Jumlah halaman | 7 (H1–H7): enam halaman sitemap Minggu 3 + H7 Sampaikan Kebutuhan |
+| Status implementasi | **Aplikasi berjalan.** H1–H7 terimplementasi, 159 uji otomatis lulus, `flutter analyze` tanpa temuan. **Firebase belum terintegrasi** (Tahap 5b/6): autentikasi dan penyimpanan masih di memori. |
 
 ---
 
@@ -22,13 +22,13 @@ Panduan Layanan Administrasi Kelurahan Tegalsari, Kota Semarang
 
 | Komponen | Status |
 |---|---|
-| `lib/main.dart` | Masih template counter bawaan Flutter. Belum diubah. |
-| Halaman H1–H6 | Belum ada. |
-| Mesin aturan IF–THEN | Belum ada. Baru berupa rancangan di dokumen ini. |
-| Proyek Firebase | Belum dibuat. Belum ada `firebase_options.dart`. |
-| Berkas uji | Hanya `test/widget_test.dart` bawaan (menguji counter). |
-| Repository Git | Belum diinisialisasi. |
-| Firebase Hosting | Belum ada deployment. |
+| `lib/main.dart` | Bootstrap aplikasi: tema, `go_router`, `ProviderScope`. Bukan lagi template counter. |
+| Halaman H1–H7 | Terimplementasi: Login, Beranda, Pilih Layanan, Pertanyaan Panduan, Hasil Panduan, Kelola Panduan, Sampaikan Kebutuhan. |
+| Mesin aturan IF–THEN | Terimplementasi di `lib/domain/` (pure Dart): forward chaining, `pangkas` iteratif, invarian terminal V-1/V-2/V-3. |
+| Proyek Firebase | **Belum dibuat.** Belum ada `firebase_options.dart`; autentikasi dan penyimpanan masih di memori. |
+| Berkas uji | 159 uji otomatis: mesin aturan, skenario S01–S46, widget, auth, admin, dan H7. |
+| Repository Git | Ada — GitHub `elisasp0/ips-guide`, 10 commit per 28 Oktober 2026. |
+| Firebase Hosting | Belum ada deployment; versi web dijalankan lokal (`flutter build web` + server statis). |
 | Validasi aturan ke Kelurahan | **Belum dilakukan.** Isi persyaratan di §11 belum diverifikasi petugas. |
 
 Dokumen ini adalah **rancangan**, bukan laporan hasil. Setiap klaim "selesai" pada rencana §15 hanya sah setelah ada bukti uji yang menyertainya. Tidak ada hasil pengujian yang dikarang di dokumen ini.
@@ -1439,6 +1439,8 @@ Bila jawaban Q4 adalah `luar_tegalsari`, `KTP-R08` (p99) menyala dan outcome men
 Urutan: **periksa struktur proyek → uji mesin aturan → UI → autentikasi → integrasi Firestore → uji alur → deployment.**
 
 Prinsip: **jangan menyentuh Firebase sebelum mesin aturan lulus uji.** Bila ada bug, Anda tahu pasti bug itu ada di aturan, bukan di jaringan, autentikasi, atau aturan keamanan.
+
+> **Status per 28 Oktober 2026.** Tahap 0–4, 5a (autentikasi in-memory), 7A–7D, 8 (sebagian), dan H7 sudah dikerjakan — 159 uji otomatis lulus, `flutter analyze` tanpa temuan. Tahap 5b (Firebase Authentication), 6 (Cloud Firestore), 9 (Hosting), dan 10 (validasi ke kelurahan) **belum**. Daftar di bawah adalah rencana urutan kerja, bukan laporan hasil.
 
 ### Tahap 0 — Pemeriksaan struktur proyek (Minggu 5, checkpoint)
 - `git init`, commit pertama, `.gitignore` (pastikan `firebase_options.dart` dan berkas kunci tidak ikut).
