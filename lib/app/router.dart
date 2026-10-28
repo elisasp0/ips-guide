@@ -10,6 +10,7 @@ import '../features/auth/presentation/login_page.dart';
 import '../features/guidance/presentation/guidance_tab_page.dart';
 import '../features/guidance/presentation/pertanyaan_page.dart';
 import '../features/home/presentation/home_page.dart';
+import '../features/kebutuhan/presentation/kebutuhan_page.dart';
 import '../features/result/presentation/hasil_page.dart';
 import '../features/services/presentation/service_list_page.dart';
 import 'shell.dart';
@@ -80,6 +81,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/panduan',
             name: 'panduan',
             builder: (context, state) => const GuidanceTabPage(),
+          ),
+          // H7 — form warga (Modul Minggu 7). Di dalam shell agar navigasi
+          // utama tetap tersedia; tombol kembali di AppBar menuju Beranda.
+          GoRoute(
+            path: '/kebutuhan',
+            name: 'kebutuhan',
+            builder: (context, state) => const KebutuhanPage(),
           ),
         ],
       ),

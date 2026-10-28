@@ -80,6 +80,22 @@ class HomePage extends ConsumerWidget {
                     judul: 'Surat Keterangan Domisili',
                     onTap: () => context.go('/panduan/domisili'),
                   ),
+                  const SizedBox(height: 24),
+                  Text('Bantuan', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  // H7 — pintu masuk form warga (Modul Minggu 7).
+                  Card(
+                    child: ListTile(
+                      key: const Key('h2-sampaikan-kebutuhan'),
+                      onTap: () => context.go('/kebutuhan'),
+                      leading: const Icon(Icons.support_agent_outlined),
+                      title: const Text('Sampaikan Kebutuhan'),
+                      subtitle: const Text(
+                        'Tulis pertanyaan atau kebutuhan Anda untuk petugas.',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                    ),
+                  ),
                   // Menu admin hanya untuk peran admin (S25). Guard rute tetap
                   // menolak akses langsung lewat URL.
                   if (auth.isAdmin) ...[
