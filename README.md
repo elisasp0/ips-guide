@@ -12,7 +12,9 @@ Proyek individu — Elisa Sandita Putri (23.01.55.0010, Kelas A1) — mata kulia
 | **Beranda** — sapaan, tiga kartu layanan, dan pintu masuk bantuan. [Lihat screenshot](docs/screenshots/01-beranda.png) | **Pilih Layanan** — tiga layanan dengan keterangan singkat. [Lihat screenshot](docs/screenshots/02-pilih-layanan.png) |
 | **Pertanyaan Panduan** — satu pertanyaan per layar, progres terlihat. [Lihat screenshot](docs/screenshots/03-pertanyaan-panduan.png) | **Hasil Panduan** — status, dokumen yang perlu disiapkan, dan tahapan. [Lihat screenshot](docs/screenshots/04-hasil-panduan.png) |
 | **Mengapa?** — aturan penentu keputusan ditampilkan terbuka. [Lihat screenshot](docs/screenshots/05-mengapa-penjelasan.png) | **Kelola Panduan** (petugas) — aturan, pertanyaan, persyaratan, dan tahapan. [Lihat screenshot](docs/screenshots/06-kelola-panduan.png) |
-| **Sampaikan Kebutuhan** — formulir tervalidasi untuk warga. [Lihat screenshot](docs/screenshots/07-sampaikan-kebutuhan.png) | |
+| **Sampaikan Kebutuhan** — formulir tervalidasi untuk warga. [Lihat screenshot](docs/screenshots/07-sampaikan-kebutuhan.png) | **Validasi Form Kosong** — pesan kesalahan pada seluruh kolom. [Lihat screenshot](docs/screenshots/08-validasi-form-kosong.png) |
+| **Validasi Nama Mengandung Angka** — sistem menolak nama yang tidak sesuai aturan. [Lihat screenshot](docs/screenshots/09-validasi-nama-mengandung-angka.png) | **Notifikasi Berhasil Dikirim** — pemberitahuan setelah formulir berhasil dikirim. [Lihat screenshot](docs/screenshots/10-notifikasi-berhasil-dikirim.png) |
+| **Daftar Kebutuhan Terkirim** — data kiriman tampil pada daftar aplikasi. [Lihat screenshot](docs/screenshots/11-daftar-kebutuhan-terkirim.png) | |
 
 ## Halaman yang Tersedia
 
@@ -142,11 +144,11 @@ Dokumentasi pendukung proyek tersedia pada folder `docs/`:
 
 ## Video Presentasi UTS
 
-Video presentasi aplikasi IPS-Guide dapat diakses melalui Google Drive berikut:
+Video presentasi aplikasi IPS-Guide dapat ditonton melalui YouTube berikut:
 
-**[Tonton Video Presentasi UTS IPS-Guide di YouTube](https://youtu.be/EnlbKMQutEw?si=eMOAMkgPrWKZ45ed)**
+[**Tonton Video Presentasi UTS IPS-Guide di YouTube**](https://youtu.be/EnlbKMQutEw)
 
-Status akses yang direkomendasikan: **Unlisted (Tidak Publik)** agar dosen dapat menonton melalui tautan tanpa video harus ditampilkan di pencarian YouTube.
+Status akses: **Unlisted (Tidak Publik)**.
 
 Video mencakup penjelasan latar belakang permasalahan, target pengguna, ruang lingkup aplikasi, demonstrasi fitur, rancangan penyimpanan data, serta penutup proyek.
 
