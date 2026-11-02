@@ -144,7 +144,9 @@ Dokumentasi pendukung proyek tersedia pada folder `docs/`:
 
 Video presentasi aplikasi IPS-Guide dapat diakses melalui Google Drive berikut:
 
-**[Buka Folder Video Presentasi IPS-Guide](https://drive.google.com/drive/folders/16S0_BNxMJWYBsEJ_Jwk9CkUbNAOmtuKh?usp=sharing)**
+**[Tonton Video Presentasi UTS IPS-Guide di YouTube](https://youtu.be/EnlbKMQutEw?si=eMOAMkgPrWKZ45ed)**
+
+Status akses yang direkomendasikan: **Unlisted (Tidak Publik)** agar dosen dapat menonton melalui tautan tanpa video harus ditampilkan di pencarian YouTube.
 
 Video mencakup penjelasan latar belakang permasalahan, target pengguna, ruang lingkup aplikasi, demonstrasi fitur, rancangan penyimpanan data, serta penutup proyek.
 
