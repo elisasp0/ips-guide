@@ -3,7 +3,7 @@
 
 Aplikasi Panduan Interaktif Layanan Administrasi **Kelurahan Tegalsari, Kota Semarang**.
 
-Proyek individu — Elisa Sandita Putri (23.01.55.0010, Kelas A1) — mata kuliah *Mobile and Web Application Development* (Ganjil 2026/2027), sekaligus penelitian skripsi.
+Proyek individu — Elisa Sandita Putri (23.01.55.0010, Kelas A1) — mata kuliah *Mobile and Web Application Development* (Ganjil 2026/2027).
 
 ## Tangkapan Layar
 
