@@ -1,10 +1,11 @@
+
 /// Kebutuhan/permintaan yang dikirim warga lewat H7 (Modul Minggu 7).
 ///
-/// Ini **bukan** data panduan dan **bukan** data kependudukan: hanya nama
-/// pemohon, layanan yang dimaksud, dan pesan bebas. Tidak ada NIK/KK yang
-/// diminta (§1.4 dokumen arsitektur).
+/// Bukan data panduan dan bukan data kependudukan.
+/// Data hanya berisi identitas pemohon, layanan, dan pesan kebutuhan.
 class KebutuhanWarga {
   final String id;
+  final String pemilikUid;
   final String namaPemohon;
   final String serviceId;
   final String serviceNama;
@@ -13,6 +14,7 @@ class KebutuhanWarga {
 
   const KebutuhanWarga({
     required this.id,
+    required this.pemilikUid,
     required this.namaPemohon,
     required this.serviceId,
     required this.serviceNama,

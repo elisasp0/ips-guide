@@ -1,94 +1,139 @@
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:ips_guide/data/providers.dart';
 import 'package:ips_guide/data/repositories/auth_repository.dart';
 import 'package:ips_guide/data/repositories/in_memory_auth_repository.dart';
+import 'package:ips_guide/data/repositories/in_memory_kebutuhan_repository.dart';
 import 'package:ips_guide/data/repositories/in_memory_knowledge_base_repository.dart';
+import 'package:ips_guide/data/repositories/knowledge_base_repository.dart';
 
-/// Utilitas pompa & penyiapan untuk uji widget IPS-Guide.
+/// Utilitas pompa dan penyiapan untuk uji widget IPS-Guide.
 ///
-/// `pumpAndSettle` tidak dapat dipakai: fase loading memakai
-/// `CircularProgressIndicator` (animasi tak berhingga) sehingga
-/// `pumpAndSettle` selalu melempar timeout. Karena itu dipakai pompa
-/// berbatas + polling.
+/// `pumpAndSettle` tidak dapat dipakai karena fase loading menggunakan
+/// CircularProgressIndicator dengan animasi tak berhingga.
+/// Karena itu digunakan pompa berbatas dan polling.
 
-/// Pompa [frames] frame @100 ms. Dipakai untuk menyelesaikan animasi
-/// transisi rute (300 ms) — selama transisi berjalan Flutter membungkus
-/// rute dengan `IgnorePointer` sehingga tap tidak akan mengenai sasaran.
-Future<void> tenang(WidgetTester tester, {int frames = 8}) async {
+/// Pompa [frames] frame @100 ms.
+///
+/// Dipakai untuk menyelesaikan animasi transisi rute (300 ms).
+Future<void> tenang(
+  WidgetTester tester, {
+  int frames = 8,
+}) async {
   for (var i = 0; i < frames; i++) {
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(
+      const Duration(milliseconds: 100),
+    );
   }
 }
 
-/// Pompa bertahap sampai [finder] menemukan sesuatu (maks 10 detik), lalu
-/// tenangkan transisi agar siap menerima tap.
+/// Pompa bertahap sampai [finder] menemukan sesuatu.
 ///
-/// Bila hasil pencarian berasal dari halaman lama yang sedang ditransisikan,
-/// [tenang] akan membuangnya; pencarian diulang sampai stabil.
-Future<void> tunggu(WidgetTester tester, Finder finder) async {
+/// Maksimal 10 detik, kemudian tenangkan transisi agar siap menerima tap.
+Future<void> tunggu(
+  WidgetTester tester,
+  Finder finder,
+) async {
   for (var i = 0; i < 100; i++) {
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(
+      const Duration(milliseconds: 100),
+    );
+
     if (finder.evaluate().isNotEmpty) {
       await tenang(tester);
-      if (finder.evaluate().isNotEmpty) return;
+
+      if (finder.evaluate().isNotEmpty) {
+        return;
+      }
     }
   }
+
   fail('Tidak muncul dalam 10 detik: $finder');
 }
 
-/// Repository seed yang dimuat SEKALI di luar zona fake-async `testWidgets`.
+/// Repository basis pengetahuan untuk pengujian.
 ///
-/// `InMemoryKnowledgeBaseRepository.fromAssets()` membaca `rootBundle` (IO
-/// nyata). Di dalam `testWidgets` waktu adalah waktu palsu sehingga IO nyata
-/// dapat kalah balapan dan fase loading tidak pernah selesai. Memuatnya di
-/// `setUpAll` lalu menimpakan [repositoryProvider] membuat uji deterministik;
-/// jalur pemuatan aset sendiri sudah diuji di `test/data` dan `test/scenario`.
+/// Dimuat sekali di luar zona fake-async testWidgets.
 late InMemoryKnowledgeBaseRepository testRepository;
 
-/// Repository autentikasi bersama, sudah dalam keadaan MASUK sebagai warga.
+/// Repository autentikasi bersama untuk pengujian.
 ///
-/// Uji yang membutuhkan keadaan lain (belum masuk, admin, profil hilang)
-/// membuat instance sendiri dan mengopernya ke [bungkusAplikasi].
+/// Kondisi awal: sudah masuk sebagai warga.
 late InMemoryAuthRepository testAuth;
 
-/// Dipakai sebagai `setUpAll(siapkanRepository)`.
+/// Menyiapkan repository sebelum pengujian dimulai.
+///
+/// Dipakai sebagai setUpAll(siapkanRepository).
 Future<void> siapkanRepository() async {
   TestWidgetsFlutterBinding.ensureInitialized();
-  testRepository = await InMemoryKnowledgeBaseRepository.fromAssets();
+
+  testRepository =
+      await InMemoryKnowledgeBaseRepository.fromAssets();
+
   testAuth = InMemoryAuthRepository();
+
   await testAuth.masuk(
     email: InMemoryAuthRepository.emailWargaDemo,
     password: InMemoryAuthRepository.sandiDemo,
   );
 }
 
-/// Bungkus widget uji dengan `ProviderScope` yang memakai repository uji.
+/// Bungkus widget uji dengan ProviderScope.
 ///
-/// [kb] dapat diisi repository segar (mis. uji H6 yang mengubah data) agar
-/// tidak mencemari uji lain dalam berkas yang sama.
+/// Repository basis pengetahuan, autentikasi, dan kebutuhan warga
+/// menggunakan implementasi in-memory selama pengujian.
+///
+/// [kb] dapat diisi repository segar untuk pengujian H6.
 Widget bungkusAplikasi(
   Widget child, {
   AuthRepository? auth,
   InMemoryKnowledgeBaseRepository? kb,
-}) =>
-    ProviderScope(
-      overrides: [
-        repositoryProvider.overrideWithValue(AsyncData(kb ?? testRepository)),
-        authRepositoryProvider.overrideWithValue(auth ?? testAuth),
-      ],
-      child: child,
-    );
+}) {
+  return ProviderScope(
+    overrides: [
+      repositoryProvider.overrideWithValue(
+        AsyncData<KnowledgeBaseRepository>(
+          kb ?? testRepository,
+        ),
+      ),
 
-/// `ProviderContainer` dengan override yang sama (untuk uji rute langsung).
+      authRepositoryProvider.overrideWithValue(
+        auth ?? testAuth,
+      ),
+
+      kebutuhanRepositoryProvider.overrideWithValue(
+        InMemoryKebutuhanRepository(),
+      ),
+    ],
+    child: child,
+  );
+}
+
+/// ProviderContainer dengan override yang sama.
+///
+/// Digunakan untuk pengujian provider dan rute langsung.
 ProviderContainer buatContainer({
   AuthRepository? auth,
   InMemoryKnowledgeBaseRepository? kb,
-}) =>
-    ProviderContainer(
-      overrides: [
-        repositoryProvider.overrideWithValue(AsyncData(kb ?? testRepository)),
-        authRepositoryProvider.overrideWithValue(auth ?? testAuth),
-      ],
-    );
+}) {
+  return ProviderContainer(
+    overrides: [
+      repositoryProvider.overrideWithValue(
+        AsyncData<KnowledgeBaseRepository>(
+          kb ?? testRepository,
+        ),
+      ),
+
+      authRepositoryProvider.overrideWithValue(
+        auth ?? testAuth,
+      ),
+
+      kebutuhanRepositoryProvider.overrideWithValue(
+        InMemoryKebutuhanRepository(),
+      ),
+    ],
+  );
+}

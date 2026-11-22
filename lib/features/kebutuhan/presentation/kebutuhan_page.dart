@@ -16,8 +16,8 @@ import '../../../domain/entities/kebutuhan_warga.dart';
 ///   (dropdown), pesan (teks multiline);
 /// - **setiap kolom punya validator** dengan pesan yang menyebut kolomnya;
 /// - **pesan status berhasil dan gagal** lewat `SnackBar`;
-/// - **data valid tampil di daftar** di bawah formulir, dari repository
-///   in-memory (hilang saat aplikasi dijalankan ulang — disengaja).
+/// - **data valid tampil di daftar** di bawah formulir,
+///   menggunakan Cloud Firestore dan difilter berdasarkan akun warga.
 ///
 /// Halaman ini tidak menyimpan NIK/KK atau dokumen apa pun; hanya nama,
 /// layanan, dan pesan bebas (§1.4 dokumen arsitektur).
@@ -175,8 +175,8 @@ class _KebutuhanPageState extends ConsumerState<KebutuhanPage> {
                 children: [
                   Text(
                     'Tulis pertanyaan atau kebutuhan Anda untuk petugas '
-                    'kelurahan. Data hanya tersimpan selama aplikasi berjalan '
-                    'dan belum dikirim ke server.',
+                    'kelurahan. Data akan disimpan di server dan dapat '
+                    'dilihat kembali melalui akun Anda.',
                     style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(height: 16),
