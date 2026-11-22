@@ -22,61 +22,59 @@ Login · Beranda · Pilih Layanan · Pertanyaan Panduan · Hasil Panduan · Kelo
 
 ## Teknologi
 
-### Sudah Digunakan dalam Kode
+| Komponen | Pemakaian saat ini |
+| --- | --- |
+| Flutter + Dart | Antarmuka aplikasi untuk web dan mobile. |
+| `go_router` | Navigasi dan penjagaan rute berdasarkan sesi/peran. |
+| `flutter_riverpod` | State management dan repository. |
+| Firebase Authentication | Registrasi, login, logout, dan identitas pengguna (UID). |
+| Cloud Firestore | Penyimpanan profil, basis pengetahuan, dan kebutuhan warga. |
+| JSON seed (`assets/seed/`) | Sumber data awal/pembanding isi basis pengetahuan; aplikasi yang diuji telah membaca data dari Firestore. |
+| GitHub | Repositori kode dan riwayat perubahan (commit/push Minggu 10 belum diverifikasi). |
 
-| Komponen | Fungsi | Bukti |
+Firebase Hosting **belum diverifikasi/digunakan** dalam pengujian Minggu 10; aplikasi diuji secara lokal di Chrome dengan `flutter run -d chrome`.
+
+## Implementasi Cloud Firestore — Minggu 10
+
+### Collection
+
+| Collection | Fungsi |
+| --- | --- |
+| `users` | Profil pengguna yang berkaitan dengan Firebase Authentication. |
+| `services` | Data tiga layanan utama (KK, KTP-el, Domisili). |
+| `questions` | Pertanyaan panduan. |
+| `rules` | Aturan keputusan panduan (bukan Security Rules). |
+| `requirements` | Katalog persyaratan layanan; 28 ID terlihat dalam verifikasi Console pada 22 November 2026. |
+| `steps` | Tahapan pelayanan. |
+| `kebutuhan_warga` | Kiriman kebutuhan warga yang dapat dibaca kembali oleh pemiliknya. |
+
+### Struktur dokumen `kebutuhan_warga`
+
+| Field | Tipe | Keterangan |
 | --- | --- | --- |
-| Flutter + Dart | Pengembangan aplikasi web dan mobile | `pubspec.yaml`, `lib/` |
-| go_router | Routing dan penjagaan rute berdasarkan peran | `lib/app/router.dart` |
-| flutter_riverpod | Pengelolaan keadaan aplikasi dan penyediaan repository | `lib/data/providers.dart` |
-| Aset JSON seed | Basis aturan panduan yang dimuat saat aplikasi dimulai | `assets/seed/` |
-| GitHub | Penyimpanan kode sumber dan riwayat perubahan | Repositori ini |
+| `id` | string | Sama dengan ID dokumen. |
+| `pemilikUid` | string | UID pengguna Firebase Auth yang mengirim kebutuhan. |
+| `namaPemohon` | string | Nama pemohon dari formulir. |
+| `serviceId` | string | ID layanan (`kk`, `ktp`, atau `domisili`). |
+| `serviceNama` | string | Nama layanan pada waktu pengiriman. |
+| `pesan` | string | Pesan atau kebutuhan warga. |
+| `dibuatPada` | timestamp | Waktu penyimpanan dari server Firestore. |
 
-### Direncanakan — Belum Terintegrasi
+Document ID menggunakan ID yang dihasilkan Firestore; tidak menggunakan nomor urut lokal. Struktur aktual ini menggantikan rancangan pra-Firebase yang dahulu menamai collection `kebutuhanWarga` dan merencanakan field `status`, `dibacaPada`, atau `catatanPetugas`. Field-field tambahan tersebut **belum termasuk pada dokumen yang diuji**.
 
-| Komponen | Rencana Pemakaian | Status Saat Ini |
-| --- | --- | --- |
-| Firebase Authentication | Login menggunakan email dan kata sandi | **Belum terpasang.** Tidak ada di `pubspec.yaml`; login masih memakai `InMemoryAuthRepository` dengan akun demo. |
-| Cloud Firestore | Menyimpan data panduan dan kebutuhan warga | **Belum terpasang.** Basis aturan dibaca dari `assets/seed/*.json`; formulir warga disimpan di memori. |
-| Firebase Hosting | Menayangkan aplikasi versi web | **Belum digunakan.** Versi web dijalankan secara lokal menggunakan `flutter build web` dan server statis. |
+### Keamanan
 
-Ketiga komponen pada tabel kedua merupakan rencana pengembangan yang telah disiapkan melalui antarmuka repository, bukan fitur yang sudah berjalan. Tidak ada berkas konfigurasi Firebase di repositori ini.
+Cloud Firestore Security Rules telah dikonfigurasi agar pengguna login dapat membaca basis pengetahuan. Perubahan basis pengetahuan dibatasi pada akun dengan `role == 'admin'`. Profil pengguna hanya dapat dibaca oleh pemilik. Dokumen `kebutuhan_warga` hanya boleh dibuat oleh pemilik UID terkait dan dibaca oleh pemilik atau admin. Pembatasan pada akses baca langsung tanpa login diperiksa dari kode Security Rules, **belum diuji sebagai permintaan langsung yang menghasilkan `permission-denied`**.
 
-## Rencana Database
+Penggunaan role admin memerlukan profil pengguna yang sesuai; akun baru membuat profil warga. Aturan keamanan produksi perlu dievaluasi lebih lanjut bila ruang lingkup aplikasi berkembang.
 
-**Penyimpanan saat ini masih menggunakan in-memory.**
-
-Formulir **Sampaikan Kebutuhan (H7)** menyimpan kiriman warga melalui `InMemoryKebutuhanRepository`. Data hanya bertahan selama aplikasi berjalan dan akan hilang ketika halaman dimuat ulang.
-
-Firebase **belum terintegrasi**. `pubspec.yaml` belum memuat paket Firebase, belum terdapat `firebase_options.dart`, dan belum terdapat `firestore.rules` di repositori ini.
-
-Rencana pengembangan setelah UTS adalah memindahkan penyimpanan kiriman H7 ke koleksi Cloud Firestore bernama `kebutuhanWarga`.
-
-### Rancangan Struktur Data
-
-| Field | Tipe | Sumber Nilai | Keterangan |
-| --- | --- | --- | --- |
-| `uid` | string | `request.auth.uid` | Belum ada di kode. Identitas pemilik kiriman dan dasar aturan akses. |
-| `namaPemohon` | string | Isian formulir | 3–60 karakter, tanpa angka. |
-| `serviceId` | string | Dropdown | `ktp` / `kk` / `domisili`. |
-| `serviceNama` | string | Data turunan | Nama layanan dibekukan agar riwayat tidak berubah. |
-| `pesan` | string | Isian formulir | 10–300 karakter. |
-| `status` | string | Default `'baru'` | Belum ada di kode. Rencana alur: `baru` → `dibaca` → `selesai`. |
-| `dibuatPada` | timestamp | `serverTimestamp()` | Waktu server, bukan jam perangkat. |
-| `dibacaPada` | timestamp | Admin | Belum ada di kode. Bersifat opsional. |
-| `catatanPetugas` | string | Admin | Belum ada di kode. Bersifat opsional dan menunggu keputusan ruang lingkup. |
-
-ID dokumen direncanakan menggunakan **auto-id Firestore**, bukan nomor urut seperti `KB-001` pada repository in-memory. Hal ini bertujuan menghindari benturan nomor ketika beberapa perangkat mengirim data secara bersamaan.
-
-Rancangan lengkap, termasuk contoh dokumen, aturan keamanan, dan daftar berkas yang perlu diubah, tersedia pada [`docs/RANCANGAN-ARSITEKTUR.md` bagian 8.7](docs/RANCANGAN-ARSITEKTUR.md).
-
-Catatan: bagian tersebut merupakan rancangan pengembangan, bukan laporan implementasi Firebase.
+Rancangan historis pra-integrasi masih tersedia pada [`docs/RANCANGAN-ARSITEKTUR.md`](docs/RANCANGAN-ARSITEKTUR.md); bila berbeda dari implementasi di atas, tandai sebagai rancangan lama, bukan kondisi aktif.
 
 ## Struktur Proyek
 
 - `lib/app/` — bootstrap aplikasi, tema (style guide bagian 13), dan routing.
 - `lib/domain/` — mesin aturan dan entity (*pure Dart*, tanpa impor Flutter atau Firestore).
-- `lib/data/` — repository in-memory dan antarmuka yang disiapkan agar Firestore dapat dipasang tanpa mengubah UI.
+- `lib/data/` — repository, antarmuka, serta implementasi Firebase Authentication dan Cloud Firestore; implementasi in-memory tetap tersedia untuk keperluan pengujian.
 - `lib/features/` — folder fitur berdasarkan halaman aplikasi.
 - `assets/seed/` — data awal berupa JSON untuk aturan panduan.
 - `test/` — pengujian otomatis aplikasi.
@@ -112,26 +110,48 @@ Buka browser dan akses:
 
 `http://localhost:8080`
 
-## Akun Demo
+## Akun Pengujian
 
-Selama Firebase Authentication belum dipasang, autentikasi menggunakan repository in-memory dengan akun demo berikut:
-
-| Email | Kata Sandi | Peran |
-| --- | --- | --- |
-| `warga@tegalsari.test` | `123456` | Warga |
-| `admin@tegalsari.test` | `123456` | Petugas (menu Kelola Panduan tersedia) |
+Aplikasi kini menggunakan Firebase Authentication. Akun untuk pengujian dibuat atau digunakan melalui Firebase Authentication, bukan kredensial demo yang dipastikan berlaku di setiap instalasi. **Jangan mencantumkan kata sandi akun dalam README atau commit.**
 
 ## Pengujian
 
-Pengujian dilakukan untuk memastikan fungsi aplikasi berjalan sesuai dengan kebutuhan.
+### Pengujian manual Minggu 10 — 22 November 2026
 
-Hasil pengujian terakhir:
+Hasil berikut didokumentasikan melalui tangkapan layar aplikasi Chrome dan Firebase Console pada percakapan pengujian. Pengujian berjalan pada proyek Firebase IPS Guide, bukan hanya penyimpanan memori lokal.
 
-- **159 pengujian otomatis berhasil** (`flutter test`).
-- **Flutter Analyze:** tidak ditemukan masalah (`No issues found!`).
-- **Pengujian formulir H7:** terdapat 11 kasus pengujian, terdiri atas 10 kasus otomatis dan 1 kasus pengujian manual melalui browser.
+| No. | Kasus uji | Hasil yang diharapkan | Hasil nyata | Status |
+| --- | --- | --- | --- | --- |
+| 1 | Login warga dan membuka panduan KK, KTP-el, Domisili | Pertanyaan, hasil aturan, persyaratan, dan tahapan muncul | Ketiga layanan berhasil menampilkan hasil pada skenario yang dicoba. Pada KTP sempat muncul error spasi operator `equals`, lalu hasil KTP berhasil dimuat setelah perbaikan. | Lulus untuk skenario yang diuji |
+| 2 | Create: kirim kebutuhan warga | Data baru muncul di aplikasi dan collection `kebutuhan_warga` | Kiriman simulasi `Warga Uji Firestore` untuk layanan KK muncul, daftar bertambah dari 3 menjadi 4, dan dokumen dengan field terkait terlihat di Firestore Console. | Lulus |
+| 3 | Read & refresh (F5) | Data tersimpan tetap terlihat setelah refresh | Setelah F5, daftar tetap 4 dan kiriman `Warga Uji Firestore` tetap ditampilkan. | Lulus |
+| 4 | Isolasi akun kedua | Akun kedua tidak menampilkan kebutuhan milik akun pertama | Dengan akun warga kedua, daftar kebutuhan menunjukkan 0 dan kiriman akun pertama tidak muncul. | Lulus pada UI yang diuji |
+| 5 | Akses aplikasi tanpa login (Incognito) | Halaman yang dilindungi mengarahkan ke login | Di Incognito, aplikasi menampilkan halaman login tanpa data warga. | Lulus untuk proteksi navigasi |
+| 6 | Security Rules: baca langsung Firestore tanpa sesi | Permintaan baca ditolak (`permission-denied`) | Kode Security Rules mewajibkan autentikasi, tetapi simulasi/permintaan langsung tanpa login belum dijalankan. | Belum diuji langsung |
 
-Dokumentasi pengujian formulir tersedia pada [`docs/UJI-FORM.md`](docs/UJI-FORM.md).
+**Catatan:** Pengujian UI akun kedua tidak menggantikan pengujian Security Rules secara langsung. Foto Console juga membuktikan keberadaan dokumen saat diverifikasi, bukan kelengkapan isi semua dokumen dalam semua collection.
+
+### Pengujian otomatis — 22 November 2026
+
+Pengujian otomatis dilakukan pada versi aplikasi IPS Guide yang telah terintegrasi dengan Firebase Authentication dan Cloud Firestore.
+
+**Hasil pengujian:**
+
+- `flutter test`: **159 pengujian berhasil** (All tests passed).
+- `flutter analyze`: **41 temuan berkategori info**, tanpa error maupun warning.
+- Temuan analyzer meliputi 20 penggunaan API yang ditandai deprecated, 20 penggunaan `print()` untuk debugging, dan satu saran penyederhanaan constructor.
+
+Secara fungsional, seluruh pengujian otomatis berhasil. Temuan analyzer dicatat sebagai pekerjaan perapian kode untuk pengembangan berikutnya.
+
+Dokumentasi lama pengujian formulir: [`docs/UJI-FORM.md`](docs/UJI-FORM.md).
+
+### Bukti yang perlu disimpan untuk pengumpulan
+
+- Screenshot Firebase Console yang menunjukkan collection `users`, `services`, `questions`, `rules`, `requirements`, `steps`, dan `kebutuhan_warga` beserta dokumen relevan.
+- Screenshot pengiriman kebutuhan warga, dokumen Firestore baru, dan daftar kebutuhan setelah F5.
+- Screenshot daftar kosong pada akun warga kedua dan halaman login Incognito.
+- Bila sudah dilakukan, bukti uji akses tanpa autentikasi yang mendapat `permission-denied`.
+- Minimal dua commit baru dan `git push` ke repository GitHub sesuai arahan Minggu 10; statusnya belum diverifikasi.
 
 ## Dokumentasi Lain
 
@@ -173,19 +193,9 @@ Rancangan antarmuka aplikasi dapat dilihat melalui tautan berikut:
 
 ## Batasan Proyek
 
-IPS-Guide merupakan aplikasi media panduan interaktif dan bukan sistem pelayanan administrasi kependudukan resmi.
+IPS-Guide merupakan media panduan interaktif, **bukan sistem penerbitan dokumen administrasi kependudukan resmi**. Aplikasi tidak terintegrasi dengan SIAK dan tidak melakukan transaksi layanan administrasi resmi.
 
-Batasan aplikasi pada versi UTS ini meliputi:
-
-1. Tidak menerbitkan dokumen administrasi kependudukan resmi.
-2. Tidak melakukan transaksi pelayanan administrasi.
-3. Tidak terintegrasi dengan SIAK maupun sistem kependudukan pemerintah.
-4. Belum menggunakan Firebase Authentication dan Cloud Firestore.
-5. Belum menggunakan Firebase Hosting.
-6. Belum menggunakan billing account, Cloud Functions, maupun autentikasi telepon.
-7. Data formulir Sampaikan Kebutuhan masih disimpan sementara di memori aplikasi dan akan hilang ketika halaman dimuat ulang.
-
-Pengembangan selanjutnya diarahkan pada integrasi basis data, autentikasi pengguna, dan peningkatan pengelolaan data agar aplikasi dapat dikembangkan menjadi sistem panduan pelayanan yang lebih terstruktur.
+Firebase Authentication dan Cloud Firestore **sudah terintegrasi** pada versi yang diuji 22 November 2026. Firebase Hosting belum diverifikasi; demonstrasi Minggu 10 dijalankan secara lokal di Chrome. Fungsi Create dan Read kebutuhan warga sudah teruji, sedangkan Update/Delete bukan ruang lingkup pengujian Minggu 10. Pengujian langsung penolakan akses Firestore tanpa login serta audit seluruh skenario aturan panduan masih perlu dilakukan.
 
 ---
 
