@@ -139,4 +139,44 @@ class LayananFirestore {
 
     return hasil;
   }
+
+  /// Memantau kebutuhan warga secara real-time.
+  Stream<List<KebutuhanWarga>> pantauKebutuhan({
+    required String pemilikUid,
+  }) {
+    final uid = pemilikUid.trim();
+
+    if (uid.isEmpty) {
+      return Stream.error(
+        Exception('Pengguna belum terautentikasi.'),
+      );
+    }
+
+    return _kebutuhan
+        .where('pemilikUid', isEqualTo: uid)
+        .snapshots()
+        .map((snapshot) {
+      final hasil = snapshot.docs.map((doc) {
+        final data = doc.data();
+        final waktu = data['dibuatPada'] as Timestamp;
+
+        return KebutuhanWarga(
+          id: data['id'] as String? ?? doc.id,
+          pemilikUid: data['pemilikUid'] as String? ?? '',
+          namaPemohon: data['namaPemohon'] as String? ?? '',
+          serviceId: data['serviceId'] as String? ?? '',
+          serviceNama: data['serviceNama'] as String? ?? '',
+          pesan: data['pesan'] as String? ?? '',
+          dibuatPada: waktu.toDate(),
+        );
+      }).toList();
+
+      hasil.sort(
+        (a, b) => b.dibuatPada.compareTo(a.dibuatPada),
+      );
+
+      return hasil;
+    });
+  }
+  
 }

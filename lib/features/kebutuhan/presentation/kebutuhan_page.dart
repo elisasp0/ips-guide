@@ -108,7 +108,7 @@ class _KebutuhanPageState extends ConsumerState<KebutuhanPage> {
             serviceNama: dipilih.nama,
             pesan: _pesan.text,
           );
-      ref.invalidate(daftarKebutuhanProvider);
+      
       if (!mounted) return;
 
       // Kosongkan kolom LALU ganti form dengan instance baru.

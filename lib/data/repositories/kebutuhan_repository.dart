@@ -9,6 +9,9 @@ abstract class KebutuhanRepository {
   /// Semua kebutuhan yang sudah dikirim, **terbaru lebih dulu**.
   Future<List<KebutuhanWarga>> daftar();
 
+    /// Memantau kebutuhan warga secara real-time.
+  Stream<List<KebutuhanWarga>> pantau();
+
   /// Simpan satu kebutuhan.
   ///
   /// Melempar [KebutuhanException] bila data wajib kosong — pertahanan lapis

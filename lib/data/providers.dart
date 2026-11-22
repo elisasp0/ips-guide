@@ -52,10 +52,12 @@ final kebutuhanRepositoryProvider = Provider<KebutuhanRepository>(
   },
 );
 
-/// Daftar kebutuhan warga dibaca dari Cloud Firestore.
+
+/// Daftar kebutuhan warga dipantau secara real-time dari Firestore.
 final daftarKebutuhanProvider =
-    FutureProvider<List<KebutuhanWarga>>(
-  (ref) async {
-    return ref.watch(kebutuhanRepositoryProvider).daftar();
+    StreamProvider<List<KebutuhanWarga>>(
+  (ref) {
+    return ref.watch(kebutuhanRepositoryProvider).pantau();
   },
 );
+
