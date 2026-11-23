@@ -70,6 +70,18 @@ class FirestoreKebutuhanRepository implements KebutuhanRepository {
     );
   }
 
+
+  /// Memantau kebutuhan milik pengguna secara real-time.
+  @override
+  Stream<List<KebutuhanWarga>> pantau() {
+    final uid = _ambilUid();
+
+    return _firestore.pantauKebutuhan(
+      pemilikUid: uid,
+    );
+  }
+
+
   /// Menyimpan kebutuhan warga ke Cloud Firestore.
   @override
   Future<KebutuhanWarga> kirim({

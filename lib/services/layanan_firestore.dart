@@ -149,7 +149,6 @@ class LayananFirestore {
 
     final hasil = snapshot.docs.map((doc) {
       final data = doc.data();
-
       final dibuatPada = _bacaTanggal(data['dibuatPada']);
 
       if (dibuatPada == null) {
@@ -166,7 +165,6 @@ class LayananFirestore {
         serviceNama: data['serviceNama'] as String? ?? '',
         pesan: data['pesan'] as String? ?? '',
         dibuatPada: dibuatPada,
-        // Dokumen lama yang belum memiliki status dianggap Menunggu.
         status: data['status'] as String? ??
             KebutuhanWarga.statusMenunggu,
         diubahPada: _bacaTanggal(data['diubahPada']),
@@ -180,10 +178,8 @@ class LayananFirestore {
     return hasil;
   }
 
-  /// Memastikan kebutuhan merupakan milik pengguna
-  /// dan masih berstatus Menunggu.
-  Future<DocumentReference<Map<String, dynamic>>>
-      _periksaKebutuhan({
+  /// Memastikan kebutuhan milik pengguna dan berstatus Menunggu.
+  Future<DocumentReference<Map<String, dynamic>>> _periksaKebutuhan({
     required String id,
     required String pemilikUid,
   }) async {
@@ -222,7 +218,7 @@ class LayananFirestore {
     return doc;
   }
 
-  /// Mengubah data kebutuhan warga menggunakan update().
+  /// Mengubah data kebutuhan warga.
   Future<KebutuhanWarga> ubahKebutuhan({
     required String id,
     required String pemilikUid,
@@ -248,7 +244,6 @@ class LayananFirestore {
 
     final snapshot = await doc.get();
     final data = snapshot.data()!;
-
     final dibuatPada = _bacaTanggal(data['dibuatPada']);
 
     if (dibuatPada == null) {
@@ -279,7 +274,7 @@ class LayananFirestore {
     );
   }
 
-  /// Menghapus kebutuhan warga menggunakan delete().
+  /// Menghapus kebutuhan warga.
   Future<void> hapusKebutuhan({
     required String id,
     required String pemilikUid,
@@ -290,5 +285,53 @@ class LayananFirestore {
     );
 
     await doc.delete();
+  }
+
+  /// Memantau kebutuhan warga secara real-time.
+  Stream<List<KebutuhanWarga>> pantauKebutuhan({
+    required String pemilikUid,
+  }) {
+    final uid = pemilikUid.trim();
+
+    if (uid.isEmpty) {
+      return Stream.error(
+        Exception('Pengguna belum terautentikasi.'),
+      );
+    }
+
+    return _kebutuhan
+        .where('pemilikUid', isEqualTo: uid)
+        .snapshots()
+        .map((snapshot) {
+      final hasil = snapshot.docs.map((doc) {
+        final data = doc.data();
+        final dibuatPada = _bacaTanggal(data['dibuatPada']);
+
+        if (dibuatPada == null) {
+          throw StateError(
+            'Data kebutuhan ${doc.id} tidak memiliki tanggal pembuatan yang valid.',
+          );
+        }
+
+        return KebutuhanWarga(
+          id: data['id'] as String? ?? doc.id,
+          pemilikUid: data['pemilikUid'] as String? ?? '',
+          namaPemohon: data['namaPemohon'] as String? ?? '',
+          serviceId: data['serviceId'] as String? ?? '',
+          serviceNama: data['serviceNama'] as String? ?? '',
+          pesan: data['pesan'] as String? ?? '',
+          dibuatPada: dibuatPada,
+          status: data['status'] as String? ??
+              KebutuhanWarga.statusMenunggu,
+          diubahPada: _bacaTanggal(data['diubahPada']),
+        );
+      }).toList();
+
+      hasil.sort(
+        (a, b) => b.dibuatPada.compareTo(a.dibuatPada),
+      );
+
+      return hasil;
+    });
   }
 }

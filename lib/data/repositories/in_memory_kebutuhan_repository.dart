@@ -1,10 +1,21 @@
-
+import 'dart:async';
 import '../../domain/entities/kebutuhan_warga.dart';
 import 'kebutuhan_repository.dart';
 
 class InMemoryKebutuhanRepository implements KebutuhanRepository {
   final List<KebutuhanWarga> _items = <KebutuhanWarga>[];
   int _urut = 0;
+
+
+  final StreamController<List<KebutuhanWarga>> _perubahan =
+      StreamController<List<KebutuhanWarga>>.broadcast();
+
+  @override
+  Stream<List<KebutuhanWarga>> pantau() async* {
+    yield await daftar();
+    yield* _perubahan.stream;
+  }
+
 
   @override
   Future<List<KebutuhanWarga>> daftar() async =>
@@ -33,8 +44,18 @@ class InMemoryKebutuhanRepository implements KebutuhanRepository {
       dibuatPada: DateTime.now(),
     );
 
+
     _items.add(item);
+
+    // Memberi tahu pendengar saat data baru disimpan.
+    if (!_perubahan.isClosed) {
+      _perubahan.add(
+        List<KebutuhanWarga>.unmodifiable(_items.reversed),
+      );
+    }
+
     return item;
+
   }
 
   @override

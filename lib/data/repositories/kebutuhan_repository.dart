@@ -6,7 +6,12 @@ abstract class KebutuhanRepository {
   /// Mengambil seluruh kebutuhan.
   Future<List<KebutuhanWarga>> daftar();
 
+  /// Memantau kebutuhan warga secara real-time.
+  Stream<List<KebutuhanWarga>> pantau();
+
   /// Mengirim kebutuhan baru.
+  ///
+  /// Melempar [KebutuhanException] bila data wajib kosong.
   Future<KebutuhanWarga> kirim({
     required String namaPemohon,
     required String serviceId,
