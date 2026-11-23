@@ -1,9 +1,12 @@
 
-/// Kebutuhan/permintaan yang dikirim warga lewat H7 (Modul Minggu 7).
+/// Kebutuhan/permintaan yang dikirim warga lewat H7.
 ///
-/// Bukan data panduan dan bukan data kependudukan.
-/// Data hanya berisi identitas pemohon, layanan, dan pesan kebutuhan.
+/// Data berisi identitas pemohon, layanan, dan pesan kebutuhan.
+/// Mendukung fitur Edit dan Hapus pada Minggu 11.
 class KebutuhanWarga {
+  /// Status awal setiap kebutuhan baru.
+  static const String statusMenunggu = 'Menunggu';
+
   final String id;
   final String pemilikUid;
   final String namaPemohon;
@@ -11,6 +14,13 @@ class KebutuhanWarga {
   final String serviceNama;
   final String pesan;
   final DateTime dibuatPada;
+
+  /// Status kebutuhan warga.
+  final String status;
+
+  /// Waktu terakhir kebutuhan diperbarui.
+  /// Bernilai null jika belum pernah diedit.
+  final DateTime? diubahPada;
 
   const KebutuhanWarga({
     required this.id,
@@ -20,5 +30,10 @@ class KebutuhanWarga {
     required this.serviceNama,
     required this.pesan,
     required this.dibuatPada,
+    this.status = statusMenunggu,
+    this.diubahPada,
   });
+
+  /// Hanya kebutuhan berstatus Menunggu yang dapat diubah/dihapus.
+  bool get bisaDiubah => status == statusMenunggu;
 }

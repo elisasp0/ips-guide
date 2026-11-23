@@ -29,6 +29,37 @@ class FirestoreKebutuhanRepository implements KebutuhanRepository {
     return user.uid;
   }
 
+  /// Memvalidasi data kebutuhan.
+  void _validasi({
+    required String namaPemohon,
+    required String serviceId,
+    required String pesan,
+  }) {
+    if (namaPemohon.trim().isEmpty) {
+      throw const KebutuhanException(
+        'Nama pemohon wajib diisi.',
+      );
+    }
+
+    if (serviceId.trim().isEmpty) {
+      throw const KebutuhanException(
+        'Jenis layanan wajib dipilih.',
+      );
+    }
+
+    if (pesan.trim().isEmpty) {
+      throw const KebutuhanException(
+        'Pesan atau kebutuhan wajib diisi.',
+      );
+    }
+
+    if (pesan.trim().length > 300) {
+      throw const KebutuhanException(
+        'Pesan maksimal 300 karakter.',
+      );
+    }
+  }
+
   /// Mengambil kebutuhan milik pengguna yang sedang login.
   @override
   Future<List<KebutuhanWarga>> daftar() async {
@@ -49,39 +80,58 @@ class FirestoreKebutuhanRepository implements KebutuhanRepository {
   }) async {
     final uid = _ambilUid();
 
-    final nama = namaPemohon.trim();
-    final isi = pesan.trim();
-
-    if (nama.isEmpty) {
-      throw const KebutuhanException(
-        'Nama pemohon wajib diisi.',
-      );
-    }
-
-    if (serviceId.trim().isEmpty) {
-      throw const KebutuhanException(
-        'Jenis layanan wajib dipilih.',
-      );
-    }
-
-    if (isi.isEmpty) {
-      throw const KebutuhanException(
-        'Pesan atau kebutuhan wajib diisi.',
-      );
-    }
-
-    if (isi.length > 300) {
-      throw const KebutuhanException(
-        'Pesan maksimal 300 karakter.',
-      );
-    }
+    _validasi(
+      namaPemohon: namaPemohon,
+      serviceId: serviceId,
+      pesan: pesan,
+    );
 
     return _firestore.simpanKebutuhan(
       pemilikUid: uid,
-      namaPemohon: nama,
+      namaPemohon: namaPemohon.trim(),
       serviceId: serviceId.trim(),
       serviceNama: serviceNama,
-      pesan: isi,
+      pesan: pesan.trim(),
+    );
+  }
+
+  /// Mengubah kebutuhan milik pengguna yang sedang login.
+  @override
+  Future<KebutuhanWarga> ubah({
+    required String id,
+    required String namaPemohon,
+    required String serviceId,
+    required String serviceNama,
+    required String pesan,
+  }) async {
+    final uid = _ambilUid();
+
+    _validasi(
+      namaPemohon: namaPemohon,
+      serviceId: serviceId,
+      pesan: pesan,
+    );
+
+    return _firestore.ubahKebutuhan(
+      id: id,
+      pemilikUid: uid,
+      namaPemohon: namaPemohon.trim(),
+      serviceId: serviceId.trim(),
+      serviceNama: serviceNama,
+      pesan: pesan.trim(),
+    );
+  }
+
+  /// Menghapus kebutuhan milik pengguna yang sedang login.
+  @override
+  Future<void> hapus({
+    required String id,
+  }) async {
+    final uid = _ambilUid();
+
+    await _firestore.hapusKebutuhan(
+      id: id,
+      pemilikUid: uid,
     );
   }
 }

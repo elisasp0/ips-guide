@@ -148,6 +148,257 @@ class _KebutuhanPageState extends ConsumerState<KebutuhanPage> {
     }
   }
 
+  // --------------------------------------------------------- EDIT KEBUTUHAN
+
+  Future<void> _ubah(KebutuhanWarga kebutuhan) async {
+    if (!kebutuhan.bisaDiubah) return;
+
+    List<GuidanceService> layanan;
+
+    try {
+      layanan = await ref.read(servicesProvider.future);
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal memuat pilihan layanan.'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+
+    final namaController =
+        TextEditingController(text: kebutuhan.namaPemohon);
+    final pesanController =
+        TextEditingController(text: kebutuhan.pesan);
+    final formKey = GlobalKey<FormState>();
+
+    String? serviceId = layanan.any(
+      (s) => s.id == kebutuhan.serviceId,
+    )
+        ? kebutuhan.serviceId
+        : null;
+
+    bool menyimpan = false;
+
+    final berhasil = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Edit Kebutuhan'),
+              content: SizedBox(
+                width: 450,
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextFormField(
+                          controller: namaController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nama pemohon',
+                          ),
+                          validator: _validasiNama,
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          initialValue: serviceId,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Jenis layanan',
+                          ),
+                          items: [
+                            for (final s in layanan)
+                              DropdownMenuItem(
+                                value: s.id,
+                                child: Text(s.nama),
+                              ),
+                          ],
+                          onChanged: menyimpan
+                              ? null
+                              : (nilai) {
+                                  setDialogState(
+                                    () => serviceId = nilai,
+                                  );
+                                },
+                          validator: _validasiLayanan,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: pesanController,
+                          maxLines: 4,
+                          maxLength: 300,
+                          decoration: const InputDecoration(
+                            labelText: 'Pesan atau kebutuhan',
+                          ),
+                          validator: _validasiPesan,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: menyimpan
+                      ? null
+                      : () => Navigator.pop(dialogContext, false),
+                  child: const Text('Batal'),
+                ),
+                FilledButton(
+                  onPressed: menyimpan
+                      ? null
+                      : () async {
+                          if (!(formKey.currentState?.validate() ??
+                              false)) {
+                            return;
+                          }
+
+                          final dipilih = layanan.where(
+                            (s) => s.id == serviceId,
+                          );
+
+                          if (dipilih.isEmpty) return;
+
+                          setDialogState(() => menyimpan = true);
+
+                          try {
+                            await ref
+                                .read(kebutuhanRepositoryProvider)
+                                .ubah(
+                                  id: kebutuhan.id,
+                                  namaPemohon: namaController.text,
+                                  serviceId: dipilih.first.id,
+                                  serviceNama: dipilih.first.nama,
+                                  pesan: pesanController.text,
+                                );
+
+                            if (!mounted) return;
+
+                            ref.invalidate(daftarKebutuhanProvider);
+
+                            Navigator.pop(dialogContext, true);
+                          } catch (e) {
+                            setDialogState(() => menyimpan = false);
+
+                            ScaffoldMessenger.of(dialogContext)
+                                .showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  e is KebutuhanException
+                                      ? e.pesan
+                                      : 'Gagal mengubah kebutuhan.',
+                                ),
+                                backgroundColor: AppColors.danger,
+                              ),
+                            );
+                          }
+                        },
+                  child: menyimpan
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Simpan Perubahan'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    namaController.dispose();
+    pesanController.dispose();
+
+    if (!mounted) return;
+
+    if (berhasil == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kebutuhan berhasil diperbarui.'),
+        ),
+      );
+    }
+  }
+
+  // -------------------------------------------------------- HAPUS KEBUTUHAN
+
+  Future<void> _hapus(KebutuhanWarga kebutuhan) async {
+    if (!kebutuhan.bisaDiubah) return;
+
+    final konfirmasi = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Hapus Kebutuhan?'),
+        content: Text(
+          'Apakah kamu yakin ingin menghapus kebutuhan '
+          'milik ${kebutuhan.namaPemohon}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.danger,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (konfirmasi != true || !mounted) return;
+
+    try {
+      await ref.read(kebutuhanRepositoryProvider).hapus(
+            id: kebutuhan.id,
+          );
+
+      ref.invalidate(daftarKebutuhanProvider);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kebutuhan berhasil dihapus.'),
+        ),
+      );
+    } on KebutuhanException catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.pesan),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal menghapus kebutuhan.'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
+  }
+
   // ----------------------------------------------------------------- UI
 
   @override
@@ -323,16 +574,22 @@ class _KebutuhanPageState extends ConsumerState<KebutuhanPage> {
                   style: theme.textTheme.bodyMedium),
             ),
           ),
-          data: (daftar) => daftar.isEmpty
-              ? const _KeadaanKosong()
-              : Column(
-                  children: [
-                    for (final k in daftar) ...[
-                      _KartuKebutuhan(kebutuhan: k),
-                      const SizedBox(height: 8),
-                    ],
-                  ],
-                ),
+          
+data: (daftar) => daftar.isEmpty
+    ? const _KeadaanKosong()
+    : Column(
+        children: [
+          for (final k in daftar) ...[
+            _KartuKebutuhan(
+              kebutuhan: k,
+              onEdit: () => _ubah(k),
+              onDelete: () => _hapus(k),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ],
+      ),
+
         ),
       ],
     );
@@ -372,10 +629,17 @@ class _KeadaanKosong extends StatelessWidget {
 }
 
 /// Satu baris daftar kebutuhan yang sudah terkirim.
+
 class _KartuKebutuhan extends StatelessWidget {
   final KebutuhanWarga kebutuhan;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
-  const _KartuKebutuhan({required this.kebutuhan});
+  const _KartuKebutuhan({
+    required this.kebutuhan,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   static String _waktu(DateTime d) {
     String dua(int n) => n.toString().padLeft(2, '0');
@@ -386,6 +650,8 @@ class _KartuKebutuhan extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bisaDiubah = kebutuhan.bisaDiubah;
+
     return Card(
       key: Key('kebutuhan-${kebutuhan.id}'),
       child: Padding(
@@ -407,16 +673,69 @@ class _KartuKebutuhan extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              kebutuhan.serviceNama,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+
             const SizedBox(height: 8),
-            Text(kebutuhan.pesan, style: theme.textTheme.bodyMedium),
+
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    kebutuhan.serviceNama,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Chip(
+                  label: Text(kebutuhan.status),
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor: bisaDiubah
+                      ? theme.colorScheme.secondaryContainer
+                      : theme.colorScheme.surfaceContainerHighest,
+                  side: BorderSide.none,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              kebutuhan.pesan,
+              style: theme.textTheme.bodyMedium,
+            ),
+
+            if (kebutuhan.diubahPada != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Terakhir diubah: ${_waktu(kebutuhan.diubahPada!)}',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+
+            if (bisaDiubah) ...[
+              const SizedBox(height: 12),
+              const Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Edit'),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: onDelete,
+                    style: TextButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                    ),
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Hapus'),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
