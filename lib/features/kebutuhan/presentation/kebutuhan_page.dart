@@ -281,13 +281,16 @@ class _KebutuhanPageState extends ConsumerState<KebutuhanPage> {
                                   pesan: pesanController.text,
                                 );
 
-                            if (!mounted) return;
-
+                            if (!mounted || !dialogContext.mounted) return;
                             ref.invalidate(daftarKebutuhanProvider);
 
                             Navigator.pop(dialogContext, true);
-                          } catch (e) {
-                            setDialogState(() => menyimpan = false);
+                          
+} catch (e) {
+  if (!mounted || !dialogContext.mounted) return;
+
+  setDialogState(() => menyimpan = false);
+
 
                             ScaffoldMessenger.of(dialogContext)
                                 .showSnackBar(
